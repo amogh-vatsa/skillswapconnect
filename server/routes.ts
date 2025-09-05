@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage";
+// import { storage } from "./storage"; // DISABLED - NO DATABASE ACCESS
 import { insertSkillSchema, insertMessageSchema, insertSkillExchangeSchema, insertUserRatingSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -42,16 +42,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Demo data seeding endpoint (for matching original Replit content)
-  app.post('/api/seed-demo', async (req, res) => {
-    try {
-      const { seedDemoData } = await import('./seedDemoData');
-      await seedDemoData();
-      res.json({ message: 'Demo data seeded successfully' });
-    } catch (error) {
-      console.error('Seeding error:', error);
-      res.status(500).json({ error: 'Failed to seed demo data' });
-    }
+  // Demo data seeding endpoint - DISABLED (database-free mode)
+  app.post('/api/seed-demo', (req, res) => {
+    console.log('📊 Demo seeding skipped - database-free mode');
+    res.json({ message: 'Demo data seeding skipped (database-free mode)' });
   });
 
   // Root health check
@@ -62,62 +56,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Auth routes - Always succeed with session fallback
-  app.get('/api/auth/user', isAuthenticated, (req: any, res) => {
-    console.log(`🔍 Auth endpoint called for user: ${req.user?.claims?.sub || 'unknown'}`);
+  // Auth routes - 100% DATABASE-FREE, BULLETPROOF VERSION
+  app.get('/api/auth/user', (req: any, res) => {
+    console.log('📊 DATABASE-FREE AUTH ENDPOINT HIT');
     
-    // Always use session fallback to avoid database connection issues
-    if (req.user && (req.user.claims || req.user)) {
-      const claims = req.user.claims || req.user;
-      const sessionUser = {
-        id: claims.sub || req.user.id || 'demo-user-id',
-        email: claims.email || req.user.email || `user${claims.sub || 'demo'}@demo.local`,
-        firstName: claims.firstName || req.user.firstName || "Demo",
-        lastName: claims.lastName || req.user.lastName || "User",
-        profileImageUrl: claims.profileImageUrl || req.user.profileImageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${claims.sub || 'demo'}`,
-        bio: claims.bio || req.user.bio || "Welcome to SkillSwap! Database-free experience.",
-        title: claims.title || req.user.title || "SkillSwap Member",
-        isVerified: claims.isVerified || req.user.isVerified || false,
-        createdAt: claims.createdAt || req.user.createdAt || new Date().toISOString(),
-        updatedAt: claims.updatedAt || req.user.updatedAt || new Date().toISOString(),
-        // Default stats when database is not available
-        avgRating: 0,
-        totalExchanges: 0,
-        skillsCount: 0
-      };
-      
-      console.log(`✅ Returning session user data: ${sessionUser.firstName} ${sessionUser.lastName}`);
-      return res.status(200).json(sessionUser);
+    // Check if user is authenticated (session-based only)
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      console.log('❌ User not authenticated');
+      return res.status(401).json({ message: "Authorization token required" });
     }
     
-    console.warn("❌ No user data found in session");
-    return res.status(401).json({ message: "No user data available" });
+    console.log('✅ User is authenticated, returning session data');
+    
+    // ALWAYS return success with session data - NEVER touch database
+    const user = req.user || {};
+    const claims = user.claims || user;
+    
+    const sessionUser = {
+      id: claims.sub || user.id || 'session-user-' + Date.now(),
+      email: claims.email || user.email || 'demo@skillswap.local',
+      firstName: claims.firstName || user.firstName || "Demo",
+      lastName: claims.lastName || user.lastName || "User",
+      profileImageUrl: claims.profileImageUrl || user.profileImageUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo',
+      bio: claims.bio || user.bio || "SkillSwap member (database-free mode)",
+      title: claims.title || user.title || "Member",
+      isVerified: claims.isVerified || user.isVerified || false,
+      createdAt: claims.createdAt || user.createdAt || new Date().toISOString(),
+      updatedAt: claims.updatedAt || user.updatedAt || new Date().toISOString(),
+      avgRating: 0,
+      totalExchanges: 0,
+      skillsCount: 0
+    };
+    
+    console.log(`🎉 SUCCESS: Returning user ${sessionUser.firstName} ${sessionUser.lastName}`);
+    return res.status(200).json(sessionUser);
   });
 
-  // Skills routes
-  app.get('/api/skills', async (req, res) => {
-    try {
-      const { category, search } = req.query;
-      const skills = await storage.getAllSkills(
-        category as string,
-        search as string
-      );
-      res.json(skills);
-    } catch (error) {
-      console.warn("Database connection failed for skills, returning empty array:", error.message);
-      res.json([]); // Return empty skills array when database is down
-    }
+  // Skills routes - DATABASE-FREE VERSION
+  app.get('/api/skills', (req, res) => {
+    console.log('📊 Skills endpoint hit - returning empty array (database-free mode)');
+    res.json([]); // Always return empty array - no database
   });
 
-  app.get('/api/skills/user/:userId', async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const skills = await storage.getSkillsByUserId(userId);
-      res.json(skills);
-    } catch (error) {
-      console.warn("Database connection failed for user skills, returning empty array:", error.message);
-      res.json([]); // Return empty skills array when database is down
-    }
+  app.get('/api/skills/user/:userId', (req, res) => {
+    console.log('📊 User skills endpoint hit - returning empty array (database-free mode)');
+    res.json([]); // Always return empty array - no database
   });
 
   app.post('/api/skills', isAuthenticated, async (req: any, res) => {
@@ -181,16 +164,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Conversations routes
-  app.get('/api/conversations', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const conversations = await storage.getConversationsByUserId(userId);
-      res.json(conversations);
-    } catch (error) {
-      console.warn("Database connection failed for conversations, returning empty array:", error.message);
-      res.json([]); // Return empty conversations array when database is down
-    }
+  // Conversations routes - DATABASE-FREE VERSION
+  app.get('/api/conversations', (req: any, res) => {
+    console.log('📊 Conversations endpoint hit - returning empty array (database-free mode)');
+    res.json([]); // Always return empty array - no database
   });
 
   app.post('/api/conversations', isAuthenticated, async (req: any, res) => {
