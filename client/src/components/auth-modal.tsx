@@ -46,19 +46,30 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const signInMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       if (!isSupabaseConfigured) {
-        throw new Error('Authentication service not configured. Please contact support.');
+        // Use generic auth for demo
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(credentials),
+        });
+        if (!response.ok) {
+          throw new Error('Sign in failed');
+        }
+        return response.json();
       }
       const { data, error } = await supabase.auth.signInWithPassword(credentials);
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
+      // Force refresh of authentication state
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Welcome back!",
         description: "You've been signed in successfully.",
       });
       onClose();
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
     onError: (error: any) => {
       toast({
@@ -104,6 +115,18 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       return response.json();
     },
     onSuccess: () => {
+      if (!isSupabaseConfigured) {
+        // Generic auth logs user in immediately after signup
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+        toast({
+          title: "Welcome to SkillSwap!",
+          description: "Your account has been created and you're now signed in.",
+        });
+        onClose();
+        return;
+      }
+      
       toast({
         title: "Account Created!",
         description: "Your account has been created successfully. Please sign in.",
@@ -190,13 +213,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <DialogTitle className="text-2xl">SkillSwap</DialogTitle>
           </div>
           <DialogDescription className="text-center">
-            {!isSupabaseConfigured ? (
-              <div className="text-orange-600 font-medium">
-                ⚠️ Authentication service is being configured. Please try again later.
-              </div>
-            ) : (
-              "Join the community of skill sharers and learners"
-            )}
+            Join the community of skill sharers and learners
           </DialogDescription>
         </DialogHeader>
 

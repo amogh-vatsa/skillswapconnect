@@ -8,25 +8,26 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
-  // Get user profile data from our API
+  // Get user profile data from our API (works with both Supabase and generic auth)
   const { data: userProfile, isLoading: profileLoading } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
-      if (!session?.access_token) return null;
-      
       const response = await fetch('/api/auth/user', {
-        headers: {
+        credentials: 'include', // Include cookies for session-based auth
+        headers: session?.access_token ? {
           'Authorization': `Bearer ${session.access_token}`
-        }
+        } : {}
       });
       
       if (!response.ok) {
+        if (response.status === 401) {
+          return null; // User not authenticated
+        }
         throw new Error('Failed to fetch user profile');
       }
       
       return response.json();
     },
-    enabled: !!session?.access_token,
     retry: false,
   });
 
@@ -70,7 +71,8 @@ export function useAuth() {
     user: userProfile,
     session,
     isLoading: loading || profileLoading,
-    isAuthenticated: !!session && !!userProfile,
+    // User is authenticated if we have user profile data (works with both auth systems)
+    isAuthenticated: !!userProfile,
     signOut,
   };
 }
