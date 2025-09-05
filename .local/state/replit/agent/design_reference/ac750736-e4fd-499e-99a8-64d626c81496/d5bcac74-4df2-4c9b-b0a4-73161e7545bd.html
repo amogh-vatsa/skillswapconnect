@@ -1,0 +1,1192 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap - Exchange Skills, Build Connections</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    popover: {
+                        DEFAULT: "var(--popover)",
+                        foreground: "var(--popover-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                }
+            }
+        }
+    };
+    </script>
+    <style>
+        :root {
+            --background: hsl(220 20% 97%);
+            --foreground: hsl(220 20% 10%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(220 20% 15%);
+            --popover: hsl(0 0% 100%);
+            --popover-foreground: hsl(220 20% 15%);
+            --primary: hsl(217 91% 60%);
+            --primary-foreground: hsl(0 0% 98%);
+            --secondary: hsl(142 76% 36%);
+            --secondary-foreground: hsl(0 0% 98%);
+            --muted: hsl(220 14% 96%);
+            --muted-foreground: hsl(220 20% 50%);
+            --accent: hsl(38 92% 50%);
+            --accent-foreground: hsl(220 20% 10%);
+            --destructive: hsl(0 84% 60%);
+            --destructive-foreground: hsl(0 0% 98%);
+            --border: hsl(220 13% 91%);
+            --input: hsl(220 13% 91%);
+            --ring: hsl(217 91% 60%);
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: hsl(220 20% 9%);
+            --foreground: hsl(220 20% 95%);
+            --card: hsl(220 20% 13%);
+            --card-foreground: hsl(220 20% 90%);
+            --popover: hsl(220 20% 13%);
+            --popover-foreground: hsl(220 20% 90%);
+            --primary: hsl(217 91% 60%);
+            --primary-foreground: hsl(0 0% 98%);
+            --secondary: hsl(142 76% 36%);
+            --secondary-foreground: hsl(0 0% 98%);
+            --muted: hsl(220 20% 15%);
+            --muted-foreground: hsl(220 20% 60%);
+            --accent: hsl(38 92% 50%);
+            --accent-foreground: hsl(220 20% 90%);
+            --destructive: hsl(0 84% 60%);
+            --destructive-foreground: hsl(0 0% 98%);
+            --border: hsl(220 20% 20%);
+            --input: hsl(220 20% 20%);
+            --ring: hsl(217 91% 60%);
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .skill-card:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .message-fade-in {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .online-indicator {
+            animation: pulse 2s infinite;
+        }
+
+        .video-call-overlay {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground">
+
+    <!-- @COMPONENT: AuthenticationOverlay [handles login/register flows] -->
+    <div id="auth-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-card p-8 rounded-lg shadow-2xl w-full max-w-md mx-4">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-card-foreground mb-2">Welcome to SkillSwap</h2>
+                <p class="text-muted-foreground">Connect with others and exchange your skills securely</p>
+            </div>
+            
+            <div class="flex space-x-2 mb-6">
+                <button id="login-tab" class="flex-1 py-2 px-4 bg-primary text-primary-foreground rounded-md font-medium">Login</button>
+                <button id="register-tab" class="flex-1 py-2 px-4 bg-muted text-muted-foreground rounded-md font-medium">Register</button>
+            </div>
+
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-card-foreground mb-2">Email</label>
+                    <input type="email" class="w-full p-3 border border-border rounded-md bg-input" placeholder="your@email.com" data-implementation="Connect to Replit Auth">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-card-foreground mb-2">Password</label>
+                    <input type="password" class="w-full p-3 border border-border rounded-md bg-input" placeholder="••••••••" data-implementation="Connect to Replit Auth">
+                </div>
+                
+                <!-- Registration-only fields -->
+                <div id="register-fields" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-card-foreground mb-2">Full Name</label>
+                        <input type="text" class="w-full p-3 border border-border rounded-md bg-input" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-card-foreground mb-2">Primary Skills</label>
+                        <input type="text" class="w-full p-3 border border-border rounded-md bg-input" placeholder="Web Development, UI Design">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-primary text-primary-foreground py-3 rounded-md font-medium hover:opacity-90" data-event="click:handleAuth">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <div class="text-sm text-muted-foreground mb-4">Or continue with</div>
+                <div class="flex space-x-3">
+                    <button class="flex-1 border border-border py-2 px-4 rounded-md text-muted-foreground hover:bg-muted" data-implementation="Replit Auth Google OAuth">
+                        <i class="fab fa-google mr-2"></i>Google
+                    </button>
+                    <button class="flex-1 border border-border py-2 px-4 rounded-md text-muted-foreground hover:bg-muted" data-implementation="Replit Auth GitHub OAuth">
+                        <i class="fab fa-github mr-2"></i>GitHub
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AuthenticationOverlay -->
+
+    <!-- @COMPONENT: Header [navigation and user controls] -->
+    <header class="bg-card border-b border-border shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fas fa-exchange-alt text-primary text-2xl mr-2"></i>
+                        <h1 class="text-xl font-bold text-card-foreground">SkillSwap</h1>
+                    </div>
+                    
+                    <nav class="hidden md:ml-10 md:flex space-x-8">
+                        <a href="#" class="text-primary font-medium">Discover</a>
+                        <a href="#" class="text-muted-foreground hover:text-foreground">My Skills</a>
+                        <a href="#" class="text-muted-foreground hover:text-foreground">Messages</a>
+                        <a href="#" class="text-muted-foreground hover:text-foreground">Exchanges</a>
+                    </nav>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <!-- Search -->
+                    <div class="relative hidden sm:block">
+                        <input type="text" placeholder="Search skills..." class="w-64 pl-10 pr-4 py-2 border border-border rounded-full bg-muted text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+                    </div>
+
+                    <!-- Notifications -->
+                    <button class="relative p-2 text-muted-foreground hover:text-foreground" data-implementation="Connect to notification system">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span class="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                    </button>
+
+                    <!-- User Menu -->
+                    <div class="relative">
+                        <!-- Professional headshot of a confident person smiling -->
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=150&h=150" alt="User profile" class="h-8 w-8 rounded-full object-cover cursor-pointer">
+                        <div class="absolute bottom-0 right-0 h-3 w-3 bg-secondary border-2 border-card rounded-full online-indicator"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <div class="flex h-screen">
+        <!-- @COMPONENT: Sidebar [navigation and quick access] -->
+        <aside class="w-64 bg-card border-r border-border hidden lg:block">
+            <div class="p-6">
+                <div class="space-y-6">
+                    <!-- Quick Stats -->
+                    <div class="bg-muted rounded-lg p-4">
+                        <h3 class="font-semibold text-card-foreground mb-3">Your Activity</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-muted-foreground">Active Exchanges</span>
+                                <span class="text-sm font-medium text-secondary" data-bind="user.activeExchanges">4</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-muted-foreground">Skills Listed</span>
+                                <span class="text-sm font-medium" data-bind="user.skillsCount">7</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-muted-foreground">Rating</span>
+                                <div class="flex items-center">
+                                    <span class="text-sm font-medium mr-1" data-bind="user.rating">4.8</span>
+                                    <i class="fas fa-star text-accent text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Messages -->
+                    <div>
+                        <h3 class="font-semibold text-card-foreground mb-3">Recent Messages</h3>
+                        <div class="space-y-3">
+                            <!-- @MAP: recentMessages.map(message => ( -->
+                            <div class="flex items-center space-x-3 p-2 rounded-md hover:bg-muted cursor-pointer">
+                                <!-- Portrait of a professional woman with short brown hair -->
+                                <img src="https://pixabay.com/get/g6d35f62116576fefac2492486f2112bae7516b876295aadf06e11243c3ff32bc70aacc95041aa796731188936e7f7fe9bf13b74b501b01f44c047515b8b15cbf_1280.jpg" alt="Sarah Chen" class="h-8 w-8 rounded-full object-cover">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-card-foreground truncate" data-bind="message.senderName">Sarah Chen</p>
+                                    <p class="text-xs text-muted-foreground truncate" data-bind="message.preview">Great! Let's schedule our design session...</p>
+                                </div>
+                                <div class="h-2 w-2 bg-primary rounded-full"></div>
+                            </div>
+
+                            <div class="flex items-center space-x-3 p-2 rounded-md hover:bg-muted cursor-pointer">
+                                <!-- Portrait of a young professional man with beard -->
+                                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100" alt="Mike Rodriguez" class="h-8 w-8 rounded-full object-cover">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-card-foreground truncate" data-bind="message.senderName">Mike Rodriguez</p>
+                                    <p class="text-xs text-muted-foreground truncate" data-bind="message.preview">Thanks for the Python tutorial!</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center space-x-3 p-2 rounded-md hover:bg-muted cursor-pointer">
+                                <!-- Portrait of a professional woman with long dark hair -->
+                                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100" alt="Emma Thompson" class="h-8 w-8 rounded-full object-cover">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-card-foreground truncate" data-bind="message.senderName">Emma Thompson</p>
+                                    <p class="text-xs text-muted-foreground truncate" data-bind="message.preview">Can you help with my Spanish pronunciation?</p>
+                                </div>
+                            </div>
+                            <!-- @END_MAP -->
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="space-y-2">
+                        <button class="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md font-medium hover:opacity-90" data-event="click:showAddSkill">
+                            <i class="fas fa-plus mr-2"></i>Add New Skill
+                        </button>
+                        <button class="w-full border border-border py-2 px-4 rounded-md text-card-foreground hover:bg-muted" data-event="click:showProfile">
+                            <i class="fas fa-user mr-2"></i>Edit Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-hidden">
+            <!-- @COMPONENT: MainContent [skill discovery and interaction hub] -->
+            <div class="h-full flex">
+                <!-- Skill Discovery Area -->
+                <div class="flex-1 overflow-y-auto">
+                    <div class="p-6">
+                        <!-- Hero Section -->
+                        <div class="mb-8">
+                            <h1 class="text-3xl font-bold text-foreground mb-2">Discover Amazing Skills</h1>
+                            <p class="text-muted-foreground">Connect with talented individuals and exchange knowledge through our secure platform</p>
+                        </div>
+
+                        <!-- Category Filters -->
+                        <div class="mb-6">
+                            <div class="flex flex-wrap gap-3">
+                                <button class="bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-medium">All Skills</button>
+                                <button class="bg-muted text-muted-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-accent hover:text-accent-foreground">Technology</button>
+                                <button class="bg-muted text-muted-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-accent hover:text-accent-foreground">Languages</button>
+                                <button class="bg-muted text-muted-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-accent hover:text-accent-foreground">Arts & Design</button>
+                                <button class="bg-muted text-muted-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-accent hover:text-accent-foreground">Business</button>
+                                <button class="bg-muted text-muted-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-accent hover:text-accent-foreground">Music</button>
+                                <button class="bg-muted text-muted-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-accent hover:text-accent-foreground">Sports</button>
+                            </div>
+                        </div>
+
+                        <!-- Featured Exchange -->
+                        <div class="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground mb-8">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-xl font-bold mb-2">Perfect Match Found!</h3>
+                                    <p class="opacity-90">Emma wants to learn React and you want to improve French pronunciation</p>
+                                    <button class="mt-3 bg-background text-foreground px-4 py-2 rounded-md font-medium hover:opacity-90">
+                                        Start Exchange
+                                    </button>
+                                </div>
+                                <div class="hidden sm:block">
+                                    <i class="fas fa-handshake text-4xl opacity-80"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skills Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- @MAP: skillCards.map(skill => ( -->
+                            
+                            <!-- Skill Card 1 -->
+                            <div class="bg-card rounded-lg border border-border shadow-sm skill-card hover:shadow-md">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Professional headshot of a smiling developer at computer -->
+                                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100" alt="Alex Johnson" class="h-12 w-12 rounded-full object-cover">
+                                            <div>
+                                                <h3 class="font-semibold text-card-foreground" data-bind="skill.userName">Alex Johnson</h3>
+                                                <div class="flex items-center">
+                                                    <span class="text-xs text-secondary font-medium mr-2" data-bind="skill.rating">4.9</span>
+                                                    <div class="flex text-accent text-xs">
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <div class="h-2 w-2 bg-secondary rounded-full"></div>
+                                            <span class="text-xs text-secondary font-medium">Online</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h4 class="font-semibold text-foreground mb-2" data-bind="skill.title">React Development</h4>
+                                        <p class="text-sm text-muted-foreground mb-3" data-bind="skill.description">I can help you build modern React applications with hooks, context, and best practices. 5+ years experience.</p>
+                                        
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <span class="bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[0]">React</span>
+                                            <span class="bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[1]">JavaScript</span>
+                                            <span class="bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[2]">TypeScript</span>
+                                        </div>
+
+                                        <div class="text-sm">
+                                            <span class="text-muted-foreground">Looking for: </span>
+                                            <span class="text-foreground font-medium" data-bind="skill.seeking">UI/UX Design, Figma</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex space-x-3">
+                                        <button class="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-md text-sm font-medium hover:opacity-90" data-event="click:startConversation">
+                                            <i class="fas fa-comment mr-2"></i>Message
+                                        </button>
+                                        <button class="flex-1 border border-border text-card-foreground py-2 px-4 rounded-md text-sm font-medium hover:bg-muted" data-event="click:viewProfile">
+                                            <i class="fas fa-user mr-2"></i>Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Skill Card 2 -->
+                            <div class="bg-card rounded-lg border border-border shadow-sm skill-card hover:shadow-md">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Professional headshot of a woman with artistic background -->
+                                            <img src="https://pixabay.com/get/g0211f9a670c05049d07da2c19a578a9549138c9389df98beb4f7e978c0d110b4c611e4fc617f3e2e7c09bdd9405094b6198f7a3562864eee7462f4dd539d671b_1280.jpg" alt="Sarah Chen" class="h-12 w-12 rounded-full object-cover">
+                                            <div>
+                                                <h3 class="font-semibold text-card-foreground" data-bind="skill.userName">Sarah Chen</h3>
+                                                <div class="flex items-center">
+                                                    <span class="text-xs text-secondary font-medium mr-2" data-bind="skill.rating">4.7</span>
+                                                    <div class="flex text-accent text-xs">
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star-half-alt"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <div class="h-2 w-2 bg-muted rounded-full"></div>
+                                            <span class="text-xs text-muted-foreground font-medium">Last seen 1h</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h4 class="font-semibold text-foreground mb-2" data-bind="skill.title">UX/UI Design</h4>
+                                        <p class="text-sm text-muted-foreground mb-3" data-bind="skill.description">Expert in user experience design, prototyping, and design systems. I can teach Figma, user research methods.</p>
+                                        
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <span class="bg-accent bg-opacity-10 text-accent px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[0]">Figma</span>
+                                            <span class="bg-accent bg-opacity-10 text-accent px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[1]">User Research</span>
+                                            <span class="bg-accent bg-opacity-10 text-accent px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[2]">Prototyping</span>
+                                        </div>
+
+                                        <div class="text-sm">
+                                            <span class="text-muted-foreground">Looking for: </span>
+                                            <span class="text-foreground font-medium" data-bind="skill.seeking">Data Analysis, SQL</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex space-x-3">
+                                        <button class="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-md text-sm font-medium hover:opacity-90" data-event="click:startConversation">
+                                            <i class="fas fa-comment mr-2"></i>Message
+                                        </button>
+                                        <button class="flex-1 border border-border text-card-foreground py-2 px-4 rounded-md text-sm font-medium hover:bg-muted" data-event="click:viewProfile">
+                                            <i class="fas fa-user mr-2"></i>Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Skill Card 3 -->
+                            <div class="bg-card rounded-lg border border-border shadow-sm skill-card hover:shadow-md">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Professional headshot of a man with guitar in background -->
+                                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100" alt="David Kim" class="h-12 w-12 rounded-full object-cover">
+                                            <div>
+                                                <h3 class="font-semibold text-card-foreground" data-bind="skill.userName">David Kim</h3>
+                                                <div class="flex items-center">
+                                                    <span class="text-xs text-secondary font-medium mr-2" data-bind="skill.rating">4.9</span>
+                                                    <div class="flex text-accent text-xs">
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <div class="h-2 w-2 bg-secondary rounded-full online-indicator"></div>
+                                            <span class="text-xs text-secondary font-medium">Online</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h4 class="font-semibold text-foreground mb-2" data-bind="skill.title">Guitar & Music Production</h4>
+                                        <p class="text-sm text-muted-foreground mb-3" data-bind="skill.description">Professional musician with 10 years experience. I can teach guitar, music theory, and DAW production.</p>
+                                        
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <span class="bg-secondary bg-opacity-10 text-secondary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[0]">Guitar</span>
+                                            <span class="bg-secondary bg-opacity-10 text-secondary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[1]">Ableton Live</span>
+                                            <span class="bg-secondary bg-opacity-10 text-secondary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[2]">Music Theory</span>
+                                        </div>
+
+                                        <div class="text-sm">
+                                            <span class="text-muted-foreground">Looking for: </span>
+                                            <span class="text-foreground font-medium" data-bind="skill.seeking">Photography, Video Editing</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex space-x-3">
+                                        <button class="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-md text-sm font-medium hover:opacity-90" data-event="click:startConversation">
+                                            <i class="fas fa-comment mr-2"></i>Message
+                                        </button>
+                                        <button class="flex-1 border border-border text-card-foreground py-2 px-4 rounded-md text-sm font-medium hover:bg-muted" data-event="click:viewProfile">
+                                            <i class="fas fa-user mr-2"></i>Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Skill Card 4 -->
+                            <div class="bg-card rounded-lg border border-border shadow-sm skill-card hover:shadow-md">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Professional headshot of a woman in business attire -->
+                                            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100" alt="Maria Garcia" class="h-12 w-12 rounded-full object-cover">
+                                            <div>
+                                                <h3 class="font-semibold text-card-foreground" data-bind="skill.userName">Maria Garcia</h3>
+                                                <div class="flex items-center">
+                                                    <span class="text-xs text-secondary font-medium mr-2" data-bind="skill.rating">4.8</span>
+                                                    <div class="flex text-accent text-xs">
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <div class="h-2 w-2 bg-secondary rounded-full online-indicator"></div>
+                                            <span class="text-xs text-secondary font-medium">Online</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h4 class="font-semibold text-foreground mb-2" data-bind="skill.title">Spanish & Business Strategy</h4>
+                                        <p class="text-sm text-muted-foreground mb-3" data-bind="skill.description">Native Spanish speaker and MBA graduate. I can help with language learning and business planning.</p>
+                                        
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <span class="bg-destructive bg-opacity-10 text-destructive px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[0]">Spanish</span>
+                                            <span class="bg-destructive bg-opacity-10 text-destructive px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[1]">Business Plan</span>
+                                            <span class="bg-destructive bg-opacity-10 text-destructive px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[2]">Marketing</span>
+                                        </div>
+
+                                        <div class="text-sm">
+                                            <span class="text-muted-foreground">Looking for: </span>
+                                            <span class="text-foreground font-medium" data-bind="skill.seeking">Yoga, Meditation</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex space-x-3">
+                                        <button class="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-md text-sm font-medium hover:opacity-90" data-event="click:startConversation">
+                                            <i class="fas fa-comment mr-2"></i>Message
+                                        </button>
+                                        <button class="flex-1 border border-border text-card-foreground py-2 px-4 rounded-md text-sm font-medium hover:bg-muted" data-event="click:viewProfile">
+                                            <i class="fas fa-user mr-2"></i>Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Skill Card 5 -->
+                            <div class="bg-card rounded-lg border border-border shadow-sm skill-card hover:shadow-md">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Professional headshot of a young woman with camera equipment -->
+                                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100" alt="Emma Thompson" class="h-12 w-12 rounded-full object-cover">
+                                            <div>
+                                                <h3 class="font-semibold text-card-foreground" data-bind="skill.userName">Emma Thompson</h3>
+                                                <div class="flex items-center">
+                                                    <span class="text-xs text-secondary font-medium mr-2" data-bind="skill.rating">4.6</span>
+                                                    <div class="flex text-accent text-xs">
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <div class="h-2 w-2 bg-muted rounded-full"></div>
+                                            <span class="text-xs text-muted-foreground font-medium">Last seen 2h</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h4 class="font-semibold text-foreground mb-2" data-bind="skill.title">Photography & French</h4>
+                                        <p class="text-sm text-muted-foreground mb-3" data-bind="skill.description">Professional photographer and native French speaker. Can teach portrait photography and conversational French.</p>
+                                        
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <span class="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[0]">Photography</span>
+                                            <span class="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[1]">French</span>
+                                            <span class="bg-accent bg-opacity-20 text-accent px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[2]">Lightroom</span>
+                                        </div>
+
+                                        <div class="text-sm">
+                                            <span class="text-muted-foreground">Looking for: </span>
+                                            <span class="text-foreground font-medium" data-bind="skill.seeking">Web Development, React</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex space-x-3">
+                                        <button class="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-md text-sm font-medium hover:opacity-90" data-event="click:startConversation">
+                                            <i class="fas fa-comment mr-2"></i>Message
+                                        </button>
+                                        <button class="flex-1 border border-border text-card-foreground py-2 px-4 rounded-md text-sm font-medium hover:bg-muted" data-event="click:viewProfile">
+                                            <i class="fas fa-user mr-2"></i>Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Skill Card 6 -->
+                            <div class="bg-card rounded-lg border border-border shadow-sm skill-card hover:shadow-md">
+                                <div class="p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Professional headshot of a man in yoga/fitness setting -->
+                                            <img src="https://images.unsplash.com/photo-1566492031773-4f4e44671d66?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100" alt="James Wilson" class="h-12 w-12 rounded-full object-cover">
+                                            <div>
+                                                <h3 class="font-semibold text-card-foreground" data-bind="skill.userName">James Wilson</h3>
+                                                <div class="flex items-center">
+                                                    <span class="text-xs text-secondary font-medium mr-2" data-bind="skill.rating">4.9</span>
+                                                    <div class="flex text-accent text-xs">
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                        <i class="fas fa-star"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <div class="h-2 w-2 bg-secondary rounded-full online-indicator"></div>
+                                            <span class="text-xs text-secondary font-medium">Online</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h4 class="font-semibold text-foreground mb-2" data-bind="skill.title">Yoga & Data Science</h4>
+                                        <p class="text-sm text-muted-foreground mb-3" data-bind="skill.description">Certified yoga instructor and data scientist. Can teach mindfulness practices and Python data analysis.</p>
+                                        
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <span class="bg-secondary bg-opacity-20 text-secondary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[0]">Yoga</span>
+                                            <span class="bg-secondary bg-opacity-20 text-secondary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[1]">Python</span>
+                                            <span class="bg-secondary bg-opacity-20 text-secondary px-2 py-1 rounded-full text-xs font-medium" data-bind="skill.tags[2]">Data Analysis</span>
+                                        </div>
+
+                                        <div class="text-sm">
+                                            <span class="text-muted-foreground">Looking for: </span>
+                                            <span class="text-foreground font-medium" data-bind="skill.seeking">Digital Marketing, SEO</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex space-x-3">
+                                        <button class="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-md text-sm font-medium hover:opacity-90" data-event="click:startConversation">
+                                            <i class="fas fa-comment mr-2"></i>Message
+                                        </button>
+                                        <button class="flex-1 border border-border text-card-foreground py-2 px-4 rounded-md text-sm font-medium hover:bg-muted" data-event="click:viewProfile">
+                                            <i class="fas fa-user mr-2"></i>Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- @END_MAP -->
+
+                            <!-- Load More Card -->
+                            <div class="bg-muted rounded-lg border-2 border-dashed border-border flex items-center justify-center p-8 skill-card cursor-pointer hover:bg-accent hover:bg-opacity-10">
+                                <div class="text-center">
+                                    <i class="fas fa-plus text-3xl text-muted-foreground mb-2"></i>
+                                    <p class="text-muted-foreground font-medium">Load More Skills</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- @COMPONENT: ChatSidebar [messaging interface] -->
+                <div id="chat-sidebar" class="w-80 bg-card border-l border-border flex flex-col hidden lg:flex">
+                    <!-- Chat Header -->
+                    <div class="p-4 border-b border-border">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-card-foreground">Messages</h3>
+                            <button class="text-muted-foreground hover:text-foreground">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active Chat -->
+                    <div class="flex-1 flex flex-col">
+                        <!-- Chat Header with User -->
+                        <div class="p-4 border-b border-border bg-muted">
+                            <div class="flex items-center space-x-3">
+                                <!-- Professional headshot matching Sarah Chen from earlier -->
+                                <img src="https://pixabay.com/get/gf4a6de3ab7717a563befb6e9c60494833aa24fd522f47165ddb121453e7abe97642ccac8e633d9e7af141c732c33e4fa67752c90df8b3bb58f835059af7ccd73_1280.jpg" alt="Sarah Chen" class="h-10 w-10 rounded-full object-cover">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-card-foreground" data-bind="activeChat.userName">Sarah Chen</h4>
+                                    <p class="text-xs text-secondary">Online • UX/UI Design</p>
+                                </div>
+                                <button class="text-primary hover:text-primary-foreground bg-primary bg-opacity-10 hover:bg-primary p-2 rounded-full" data-event="click:startVideoCall" data-implementation="Initialize Agora video call">
+                                    <i class="fas fa-video text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Chat Messages -->
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                            <!-- @MAP: messages.map(message => ( -->
+                            
+                            <!-- Incoming Message -->
+                            <div class="flex space-x-3 message-fade-in">
+                                <!-- Small version of Sarah Chen's profile photo -->
+                                <img src="https://pixabay.com/get/geb7503ae09aec951924cc9d72af8253a07714700ff973de94f830b6e9ac61c3f5cf9e7914c9b4020b7ad7f95c4d05aa8eabfa06f5bd85e6a61145e260a9e1c8d_1280.jpg" alt="Sarah Chen" class="h-8 w-8 rounded-full object-cover">
+                                <div class="flex-1">
+                                    <div class="bg-muted p-3 rounded-lg max-w-xs">
+                                        <p class="text-sm text-card-foreground" data-bind="message.content" data-mock="true">Hi! I saw you're looking for UX design help. I'd love to help you with your project in exchange for some React tutoring.</p>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground mt-1" data-bind="message.timestamp">10:30 AM</p>
+                                </div>
+                            </div>
+
+                            <!-- Outgoing Message -->
+                            <div class="flex justify-end message-fade-in">
+                                <div class="max-w-xs">
+                                    <div class="bg-primary p-3 rounded-lg">
+                                        <p class="text-sm text-primary-foreground" data-bind="message.content" data-mock="true">That sounds perfect! I've been working on a web app and could really use some UX feedback. When would be a good time for a video call?</p>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground mt-1 text-right" data-bind="message.timestamp">10:32 AM</p>
+                                </div>
+                            </div>
+
+                            <!-- Incoming Message with Skill Match -->
+                            <div class="flex space-x-3 message-fade-in">
+                                <img src="https://pixabay.com/get/gd264cba0412ae777f8e2b41b0cd92c318462e28b7f24a6ae2d34e0378bcd9fb200f0fdb8bac49ae9980def2d5b6fa98f5a4baf3070fad893723d09623d91f78d_1280.jpg" alt="Sarah Chen" class="h-8 w-8 rounded-full object-cover">
+                                <div class="flex-1">
+                                    <div class="bg-muted p-3 rounded-lg max-w-xs">
+                                        <p class="text-sm text-card-foreground mb-2" data-bind="message.content" data-mock="true">How about tomorrow at 2 PM? I'm free for about an hour.</p>
+                                        
+                                        <!-- Skill Exchange Proposal -->
+                                        <div class="bg-accent bg-opacity-10 border border-accent border-opacity-30 rounded-lg p-3 mt-2">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-handshake text-accent mr-2"></i>
+                                                <span class="text-xs font-medium text-accent">Skill Exchange Proposal</span>
+                                            </div>
+                                            <div class="text-xs space-y-1">
+                                                <div><span class="font-medium">Sarah offers:</span> UX Design Review (1 hour)</div>
+                                                <div><span class="font-medium">You offer:</span> React Development Tutorial (1 hour)</div>
+                                            </div>
+                                            <div class="flex space-x-2 mt-3">
+                                                <button class="bg-secondary text-secondary-foreground px-3 py-1 rounded text-xs font-medium">Accept</button>
+                                                <button class="border border-border text-card-foreground px-3 py-1 rounded text-xs">Modify</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground mt-1" data-bind="message.timestamp">10:35 AM</p>
+                                </div>
+                            </div>
+                            <!-- @END_MAP -->
+                        </div>
+
+                        <!-- Message Input -->
+                        <div class="p-4 border-t border-border">
+                            <div class="flex space-x-3">
+                                <input type="text" placeholder="Type your message..." class="flex-1 p-3 border border-border rounded-full bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" data-implementation="Connect to Socket.io real-time messaging">
+                                <button class="bg-primary text-primary-foreground p-3 rounded-full hover:opacity-90" data-event="click:sendMessage">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center space-x-4 mt-3">
+                                <button class="text-muted-foreground hover:text-foreground text-sm" data-implementation="File upload for skill portfolios">
+                                    <i class="fas fa-paperclip mr-1"></i>Attach
+                                </button>
+                                <button class="text-muted-foreground hover:text-foreground text-sm" data-implementation="Propose skill exchange">
+                                    <i class="fas fa-handshake mr-1"></i>Propose Exchange
+                                </button>
+                                <button class="text-muted-foreground hover:text-foreground text-sm" data-event="click:startVideoCall">
+                                    <i class="fas fa-video mr-1"></i>Video Call
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: ChatSidebar -->
+            </div>
+            <!-- @END_COMPONENT: MainContent -->
+        </main>
+    </div>
+
+    <!-- @COMPONENT: VideoCallModal [integrated video calling interface] -->
+    <div id="video-call-modal" class="fixed inset-0 video-call-overlay flex items-center justify-center z-50 hidden" data-implementation="Integrate with Agora or similar video service">
+        <div class="bg-card rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
+            <!-- Call Header -->
+            <div class="bg-muted p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <!-- Sarah Chen's profile photo -->
+                    <img src="https://pixabay.com/get/g16b4865162c1a735bcff13d4c249bdfc2fb4b6b393ced5e2add7092470d6850c1222c125fb6357cff3639bb4dd8d4743a453b5748c316be3dd214886748baf4c_1280.jpg" alt="Sarah Chen" class="h-10 w-10 rounded-full object-cover">
+                    <div>
+                        <h3 class="font-semibold text-card-foreground" data-bind="call.participantName">Sarah Chen</h3>
+                        <p class="text-sm text-secondary">UX Design Session • <span data-bind="call.duration">15:32</span></p>
+                    </div>
+                </div>
+                <button class="text-muted-foreground hover:text-foreground" data-event="click:minimizeCall">
+                    <i class="fas fa-window-minimize"></i>
+                </button>
+            </div>
+
+            <!-- Video Area -->
+            <div class="relative bg-gray-900 aspect-video">
+                <!-- Remote Video -->
+                <!-- Professional woman conducting a design review session over video call -->
+                <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=450" alt="Video call session" class="w-full h-full object-cover" data-implementation="Replace with actual video stream from Agora SDK">
+                
+                <!-- Local Video (Picture-in-Picture) -->
+                <div class="absolute bottom-4 right-4 w-48 h-36 bg-gray-800 rounded-lg overflow-hidden border-2 border-primary">
+                    <!-- Person's view during video call from their perspective -->
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=150" alt="Your video" class="w-full h-full object-cover" data-implementation="Local video stream">
+                </div>
+
+                <!-- Screen Share Indicator -->
+                <div class="absolute top-4 left-4 bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-medium">
+                    <i class="fas fa-desktop mr-2"></i>Screen Shared
+                </div>
+
+                <!-- Call Controls -->
+                <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black bg-opacity-70 rounded-full px-6 py-3">
+                    <button class="text-white hover:text-primary p-2" data-event="click:toggleMute" data-implementation="Toggle microphone">
+                        <i class="fas fa-microphone text-lg"></i>
+                    </button>
+                    <button class="text-white hover:text-primary p-2" data-event="click:toggleVideo" data-implementation="Toggle camera">
+                        <i class="fas fa-video text-lg"></i>
+                    </button>
+                    <button class="text-white hover:text-accent p-2" data-event="click:shareScreen" data-implementation="Screen sharing">
+                        <i class="fas fa-desktop text-lg"></i>
+                    </button>
+                    <button class="bg-destructive text-destructive-foreground px-4 py-2 rounded-full font-medium hover:opacity-90" data-event="click:endCall">
+                        <i class="fas fa-phone-slash mr-2"></i>End Call
+                    </button>
+                    <button class="text-white hover:text-primary p-2" data-event="click:showSettings" data-implementation="Call settings">
+                        <i class="fas fa-cog text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Call Notes & Skills -->
+            <div class="p-4 bg-muted">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm">
+                        <span class="text-muted-foreground">Exchange: </span>
+                        <span class="text-foreground font-medium">UX Review ↔ React Tutorial</span>
+                    </div>
+                    <button class="bg-secondary text-secondary-foreground px-3 py-1 rounded text-sm font-medium" data-event="click:completeExchange">
+                        Complete Exchange
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: VideoCallModal -->
+
+    <!-- @COMPONENT: ProfileModal [detailed user profile view] -->
+    <div id="profile-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+        <div class="bg-card rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <!-- Profile Header -->
+            <div class="relative">
+                <!-- Professional workspace background with laptop and design elements -->
+                <img src="https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=300" alt="Profile background" class="w-full h-32 object-cover rounded-t-xl">
+                <button class="absolute top-4 right-4 text-white bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-70" data-event="click:closeProfile">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <!-- Profile Info -->
+                <div class="flex items-start space-x-4 -mt-16 mb-6">
+                    <!-- Large version of Sarah Chen's professional photo -->
+                    <img src="https://pixabay.com/get/gb074e01136c07dfe964153c602b9ea33f9d4fdbbf7bbdc9a6d43275afddf6c6f0cf2d7aa0de902c8e867f41967cf19a6548ccc5c9f05f8aad20199e2e8815b26_1280.jpg" alt="Sarah Chen" class="h-24 w-24 rounded-full object-cover border-4 border-card shadow-lg">
+                    <div class="flex-1 mt-12">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <h2 class="text-2xl font-bold text-card-foreground" data-bind="profile.name">Sarah Chen</h2>
+                            <i class="fas fa-check-circle text-primary"></i>
+                            <span class="bg-secondary text-secondary-foreground px-2 py-1 rounded-full text-xs font-medium">Verified</span>
+                        </div>
+                        <p class="text-muted-foreground mb-2" data-bind="profile.title">Senior UX Designer at TechCorp</p>
+                        <div class="flex items-center space-x-4 text-sm">
+                            <span class="flex items-center text-secondary">
+                                <i class="fas fa-star mr-1"></i>
+                                <span data-bind="profile.rating">4.7</span> (28 reviews)
+                            </span>
+                            <span class="text-muted-foreground">
+                                <i class="fas fa-exchange-alt mr-1"></i>
+                                <span data-bind="profile.completedExchanges">15</span> exchanges
+                            </span>
+                            <span class="text-secondary">
+                                <i class="fas fa-circle mr-1 text-xs"></i>Online
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills I Offer -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-card-foreground mb-3">Skills I Offer</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="border border-border rounded-lg p-4">
+                            <h4 class="font-medium text-foreground mb-2">UX/UI Design</h4>
+                            <p class="text-sm text-muted-foreground mb-2">User research, wireframing, prototyping, design systems</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-primary bg-primary bg-opacity-10 px-2 py-1 rounded">Expert Level</span>
+                                <span class="text-xs text-secondary">15 sessions</span>
+                            </div>
+                        </div>
+                        <div class="border border-border rounded-lg p-4">
+                            <h4 class="font-medium text-foreground mb-2">Figma Training</h4>
+                            <p class="text-sm text-muted-foreground mb-2">Advanced Figma techniques, component libraries, collaboration</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-primary bg-primary bg-opacity-10 px-2 py-1 rounded">Expert Level</span>
+                                <span class="text-xs text-secondary">22 sessions</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills I Want -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-card-foreground mb-3">Skills I Want to Learn</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-sm">React Development</span>
+                        <span class="bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-sm">Node.js</span>
+                        <span class="bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-sm">Database Design</span>
+                        <span class="bg-accent bg-opacity-10 text-accent px-3 py-1 rounded-full text-sm">Photography</span>
+                    </div>
+                </div>
+
+                <!-- Recent Reviews -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-card-foreground mb-3">Recent Reviews</h3>
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-secondary pl-4">
+                            <p class="text-sm text-card-foreground mb-1" data-mock="true">"Sarah's UX feedback was incredible! She helped me redesign my entire user flow."</p>
+                            <div class="flex items-center space-x-2">
+                                <div class="flex text-accent text-xs">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                                <span class="text-xs text-muted-foreground">- Alex Johnson, 2 days ago</span>
+                            </div>
+                        </div>
+                        <div class="border-l-4 border-secondary pl-4">
+                            <p class="text-sm text-card-foreground mb-1" data-mock="true">"Learned so much about design systems in just one session. Highly recommended!"</p>
+                            <div class="flex items-center space-x-2">
+                                <div class="flex text-accent text-xs">
+                                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                                </div>
+                                <span class="text-xs text-muted-foreground">- Mike Rodriguez, 1 week ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-3">
+                    <button class="flex-1 bg-primary text-primary-foreground py-3 px-4 rounded-md font-medium hover:opacity-90" data-event="click:startConversation">
+                        <i class="fas fa-comment mr-2"></i>Start Conversation
+                    </button>
+                    <button class="flex-1 bg-secondary text-secondary-foreground py-3 px-4 rounded-md font-medium hover:opacity-90" data-event="click:proposeExchange">
+                        <i class="fas fa-handshake mr-2"></i>Propose Exchange
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ProfileModal -->
+
+    <!-- @COMPONENT: AddSkillModal [skill creation interface] -->
+    <div id="add-skill-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+        <div class="bg-card rounded-xl shadow-2xl w-full max-w-lg mx-4">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-card-foreground">Add New Skill</h2>
+                    <button class="text-muted-foreground hover:text-foreground" data-event="click:closeAddSkill">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <form class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-card-foreground mb-2">Skill Title</label>
+                        <input type="text" class="w-full p-3 border border-border rounded-md bg-input" placeholder="e.g., JavaScript Development">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-card-foreground mb-2">Description</label>
+                        <textarea rows="3" class="w-full p-3 border border-border rounded-md bg-input" placeholder="Describe what you can teach and your experience..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-card-foreground mb-2">Category</label>
+                        <select class="w-full p-3 border border-border rounded-md bg-input">
+                            <option>Technology</option>
+                            <option>Languages</option>
+                            <option>Arts & Design</option>
+                            <option>Business</option>
+                            <option>Music</option>
+                            <option>Sports & Fitness</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-card-foreground mb-2">Skills I'm Seeking</label>
+                        <input type="text" class="w-full p-3 border border-border rounded-md bg-input" placeholder="e.g., UI Design, Photography">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-card-foreground mb-2">Experience Level</label>
+                        <div class="flex space-x-3">
+                            <label class="flex items-center">
+                                <input type="radio" name="level" value="beginner" class="mr-2">
+                                <span class="text-sm">Beginner</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="level" value="intermediate" class="mr-2" checked>
+                                <span class="text-sm">Intermediate</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="level" value="expert" class="mr-2">
+                                <span class="text-sm">Expert</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" class="flex-1 border border-border text-card-foreground py-3 px-4 rounded-md font-medium hover:bg-muted" data-event="click:closeAddSkill">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-primary text-primary-foreground py-3 px-4 rounded-md font-medium hover:opacity-90" data-event="click:saveSkill">
+                            Add Skill
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AddSkillModal -->
+
+    <!-- Mobile Navigation -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border">
+        <div class="flex items-center justify-around py-2">
+            <button class="flex flex-col items-center p-2 text-primary">
+                <i class="fas fa-home text-lg mb-1"></i>
+                <span class="text-xs">Discover</span>
+            </button>
+            <button class="flex flex-col items-center p-2 text-muted-foreground">
+                <i class="fas fa-user text-lg mb-1"></i>
+                <span class="text-xs">Skills</span>
+            </button>
+            <button class="flex flex-col items-center p-2 text-muted-foreground relative" data-event="click:toggleMobileChat">
+                <i class="fas fa-comment text-lg mb-1"></i>
+                <span class="text-xs">Messages</span>
+                <div class="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">3</div>
+            </button>
+            <button class="flex flex-col items-center p-2 text-muted-foreground">
+                <i class="fas fa-exchange-alt text-lg mb-1"></i>
+                <span class="text-xs">Exchanges</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- @STATE: isAuthenticated:boolean = false -->
+    <!-- @STATE: activeChat:object = null -->
+    <!-- @STATE: isVideoCallActive:boolean = false -->
+    <!-- @STATE: selectedProfile:object = null -->
+
+    <script>
+        (function() {
+            // DOM elements
+            const authOverlay = document.getElementById('auth-overlay');
+            const chatSidebar = document.getElementById('chat-sidebar');
+            const videoCallModal = document.getElementById('video-call-modal');
+            const profileModal = document.getElementById('profile-modal');
+            const addSkillModal = document.getElementById('add-skill-modal');
+            
+            // Show auth overlay on page load (in real app, check authentication state)
+            // TODO: Replace with actual Replit Auth integration
+            window.addEventListener('load', function() {
+                authOverlay.classList.remove('hidden');
+            });
+
+            // Auth tab switching
+            const loginTab = document.getElementById('login-tab');
+            const registerTab = document.getElementById('register-tab');
+            const registerFields = document.getElementById('register-fields');
+            const authForm = document.getElementById('auth-form');
+
+            loginTab.addEventListener('click', function() {
+                loginTab.classList.add('bg-primary', 'text-primary-foreground');
+                loginTab.classList.remove('bg-muted', 'text-muted-foreground');
+                registerTab.classList.add('bg-muted', 'text-muted-foreground');
+                registerTab.classList.remove('bg-primary', 'text-primary-foreground');
+                registerFields.classList.add('hidden');
+                authForm.querySelector('button[type="submit"]').textContent = 'Sign In';
+            });
+
+            registerTab.addEventListener('click', function() {
+                registerTab.classList.add('bg-primary', 'text-primary-foreground');
+                registerTab.classList.remove('bg-muted', 'text-muted-foreground');
+                loginTab.classList.add('bg-muted', 'text-muted-foreground');
+                loginTab.classList.remove('bg-primary', 'text-primary-foreground');
+                registerFields.classList.remove('hidden');
+                authForm.querySelector('button[type="submit"]').textContent = 'Create Account';
+            });
+
+            // Mock authentication (replace with Replit Auth)
+            authForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                // TODO: Implement actual Replit Auth integration
+                authOverlay.classList.add('hidden');
+            });
+
+            // Message button interactions
+            document.querySelectorAll('[data-event="click:startConversation"]').forEach(button => {
+                button.addEventListener('click', function() {
+                    chatSidebar.classList.remove('hidden');
+                    chatSidebar.classList.add('flex');
+                });
+            });
+
+            // Profile modal interactions
+            document.querySelectorAll('[data-event="click:viewProfile"]').forEach(button => {
+                button.addEventListener('click', function() {
+                    profileModal.classList.remove('hidden');
+                });
+            });
+
+            document.querySelector('[data-event="click:closeProfile"]').addEventListener('click', function() {
+                profileModal.classList.add('hidden');
+            });
+
+            // Video call interactions
+            document.querySelector('[data-event="click:startVideoCall"]').addEventListener('click', function() {
+                videoCallModal.classList.remove('hidden');
+                // TODO: Initialize Agora video call
+            });
+
+            document.querySelector('[data-event="click:endCall"]').addEventListener('click', function() {
+                videoCallModal.classList.add('hidden');
+                // TODO: End Agora video call
+            });
+
+            // Add skill modal
+            document.querySelector('[data-event="click:showAddSkill"]').addEventListener('click', function() {
+                addSkillModal.classList.remove('hidden');
+            });
+
+            document.querySelector('[data-event="click:closeAddSkill"]').addEventListener('click', function() {
+                addSkillModal.classList.add('hidden');
+            });
+
+            // Mobile chat toggle
+            document.querySelector('[data-event="click:toggleMobileChat"]').addEventListener('click', function() {
+                chatSidebar.classList.toggle('hidden');
+                chatSidebar.classList.toggle('flex');
+            });
+
+            // TODO: Implement real-time messaging with Socket.io
+            // TODO: Implement user authentication with Replit Auth
+            // TODO: Integrate video calling with Agora SDK
+            // TODO: Add skill search and filtering functionality
+            // TODO: Implement user rating and feedback system
+            // TODO: Add notification system for new messages and exchanges
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+[build]
+command = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 10
+
+[variables]
+NODE_ENV = "production"
+PORT = "$PORT"
+
+# Environment variables will be set through Railway dashboard
+# DATABASE_URL = "mysql://..."
+# SESSION_SECRET = "..."

@@ -7,6 +7,21 @@ import { insertSkillSchema, insertMessageSchema, insertSkillExchangeSchema, inse
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
+  // Root health check
+  app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK' });
+  });
+
   // Auth middleware
   await setupAuth(app);
 

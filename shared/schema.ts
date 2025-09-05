@@ -1,102 +1,104 @@
 import { sql } from 'drizzle-orm';
 import {
   index,
-  jsonb,
-  pgTable,
+  json,
+  mysqlTable,
   timestamp,
   varchar,
   text,
-  integer,
+  int,
   boolean,
   decimal,
   primaryKey,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Session storage table - mandatory for Replit Auth
-export const sessions = pgTable(
+export const sessions = mysqlTable(
   "sessions",
   {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
+    sid: varchar("sid", { length: 128 }).primaryKey(),
+    sess: json("sess").notNull(),
     expire: timestamp("expire").notNull(),
   },
-  (table) => [index("IDX_session_expire").on(table.expire)],
+  (table) => ({
+    expireIdx: index("IDX_session_expire").on(table.expire),
+  }),
 );
 
 // Users table - mandatory for Replit Auth
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
+export const users = mysqlTable("users", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  email: varchar("email", { length: 255 }).unique(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  profileImageUrl: varchar("profile_image_url", { length: 500 }),
   bio: text("bio"),
-  title: varchar("title"),
+  title: varchar("title", { length: 200 }),
   isVerified: boolean("is_verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Skills table
-export const skills = pgTable("skills", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  title: varchar("title").notNull(),
+export const skills = mysqlTable("skills", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  userId: varchar("user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar("title", { length: 200 }).notNull(),
   description: text("description").notNull(),
-  category: varchar("category").notNull(),
-  tags: text("tags").array(),
-  level: varchar("level").notNull(), // beginner, intermediate, expert
-  seeking: text("seeking").array(),
+  category: varchar("category", { length: 100 }).notNull(),
+  tags: json("tags"),
+  level: varchar("level", { length: 50 }).notNull(), // beginner, intermediate, expert
+  seeking: json("seeking"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // Conversations table
-export const conversations = pgTable("conversations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  participant1Id: varchar("participant1_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  participant2Id: varchar("participant2_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+export const conversations = mysqlTable("conversations", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  participant1Id: varchar("participant1_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  participant2Id: varchar("participant2_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   lastMessageAt: timestamp("last_message_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Messages table
-export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: 'cascade' }),
-  senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+export const messages = mysqlTable("messages", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  conversationId: varchar("conversation_id", { length: 36 }).notNull().references(() => conversations.id, { onDelete: 'cascade' }),
+  senderId: varchar("sender_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
-  messageType: varchar("message_type").default('text'), // text, exchange_proposal, system
-  metadata: jsonb("metadata"), // for exchange proposals, file attachments, etc.
+  messageType: varchar("message_type", { length: 50 }).default('text'), // text, exchange_proposal, system
+  metadata: json("metadata"), // for exchange proposals, file attachments, etc.
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Skill exchanges table
-export const skillExchanges = pgTable("skill_exchanges", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requesterId: varchar("requester_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  providerId: varchar("provider_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  requesterSkillId: varchar("requester_skill_id").references(() => skills.id),
-  providerSkillId: varchar("provider_skill_id").references(() => skills.id),
-  status: varchar("status").default('pending'), // pending, accepted, completed, cancelled
+export const skillExchanges = mysqlTable("skill_exchanges", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  requesterId: varchar("requester_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  providerId: varchar("provider_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  requesterSkillId: varchar("requester_skill_id", { length: 36 }).references(() => skills.id),
+  providerSkillId: varchar("provider_skill_id", { length: 36 }).references(() => skills.id),
+  status: varchar("status", { length: 50 }).default('pending'), // pending, accepted, completed, cancelled
   scheduledAt: timestamp("scheduled_at"),
   completedAt: timestamp("completed_at"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // User ratings table
-export const userRatings = pgTable("user_ratings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  raterId: varchar("rater_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  ratedUserId: varchar("rated_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  exchangeId: varchar("exchange_id").references(() => skillExchanges.id),
-  rating: integer("rating").notNull(), // 1-5
+export const userRatings = mysqlTable("user_ratings", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
+  raterId: varchar("rater_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  ratedUserId: varchar("rated_user_id", { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
+  exchangeId: varchar("exchange_id", { length: 36 }).references(() => skillExchanges.id),
+  rating: int("rating").notNull(), // 1-5
   review: text("review"),
   createdAt: timestamp("created_at").defaultNow(),
 });

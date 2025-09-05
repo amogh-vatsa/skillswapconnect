@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - SESSION_SECRET=${SESSION_SECRET}
+    depends_on:
+      - tidb
+    restart: unless-stopped
+
+  # Optional: Local TiDB for development
+  tidb:
+    image: pingcap/tidb:latest
+    ports:
+      - "4000:4000"
+      - "10080:10080"
+    command: >
+      /tidb-server
+      --store=mocktikv
+      --path=""
+      --log-file=""
+    restart: unless-stopped
+    
+  # Optional: TiDB Dashboard
+  pd:
+    image: pingcap/pd:latest
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    command: >
+      /pd-server
+      --name=pd
+      --data-dir=/pd
+      --client-urls=http://0.0.0.0:2379
+      --advertise-client-urls=http://pd:2379
+      --peer-urls=http://0.0.0.0:2380
+      --advertise-peer-urls=http://pd:2380
+      --initial-cluster=pd=http://pd:2380
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
