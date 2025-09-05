@@ -103,65 +103,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json([]); // Always return empty array - no database
   });
 
-  app.post('/api/skills', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const skillData = insertSkillSchema.parse({ ...req.body, userId });
-      const skill = await storage.createSkill(skillData);
-      res.json(skill);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid skill data", errors: error.errors });
-      }
-      console.error("Error creating skill:", error);
-      res.status(500).json({ message: "Failed to create skill" });
-    }
+  app.post('/api/skills', (req: any, res) => {
+    console.log('📊 Create skill endpoint - disabled (database-free mode)');
+    res.status(200).json({ message: 'Skill creation disabled in database-free mode' });
   });
 
-  app.put('/api/skills/:id', isAuthenticated, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const userId = req.user.claims.sub;
-      
-      // Verify skill belongs to user
-      const existingSkills = await storage.getSkillsByUserId(userId);
-      const skillExists = existingSkills.some(skill => skill.id === id);
-      
-      if (!skillExists) {
-        return res.status(404).json({ message: "Skill not found or unauthorized" });
-      }
-
-      const updates = insertSkillSchema.partial().parse(req.body);
-      const skill = await storage.updateSkill(id, updates);
-      res.json(skill);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid skill data", errors: error.errors });
-      }
-      console.error("Error updating skill:", error);
-      res.status(500).json({ message: "Failed to update skill" });
-    }
+  app.put('/api/skills/:id', (req: any, res) => {
+    console.log('📊 Update skill endpoint - disabled (database-free mode)');
+    res.status(200).json({ message: 'Skill updates disabled in database-free mode' });
   });
 
-  app.delete('/api/skills/:id', isAuthenticated, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const userId = req.user.claims.sub;
-      
-      // Verify skill belongs to user
-      const existingSkills = await storage.getSkillsByUserId(userId);
-      const skillExists = existingSkills.some(skill => skill.id === id);
-      
-      if (!skillExists) {
-        return res.status(404).json({ message: "Skill not found or unauthorized" });
-      }
-
-      await storage.deleteSkill(id);
-      res.json({ message: "Skill deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting skill:", error);
-      res.status(500).json({ message: "Failed to delete skill" });
-    }
+  app.delete('/api/skills/:id', (req: any, res) => {
+    console.log('📊 Delete skill endpoint - disabled (database-free mode)');
+    res.status(200).json({ message: 'Skill deletion disabled in database-free mode' });
   });
 
   // Conversations routes - DATABASE-FREE VERSION
@@ -170,159 +124,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json([]); // Always return empty array - no database
   });
 
-  app.post('/api/conversations', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { participantId } = req.body;
-      
-      if (!participantId) {
-        return res.status(400).json({ message: "Participant ID is required" });
-      }
-
-      const conversation = await storage.getOrCreateConversation(userId, participantId);
-      res.json(conversation);
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      res.status(500).json({ message: "Failed to create conversation" });
-    }
+  // ALL REMAINING ENDPOINTS - DATABASE-FREE VERSION
+  app.post('/api/conversations', (req: any, res) => {
+    console.log('📊 Create conversation - disabled (database-free mode)');
+    res.json({ message: 'Conversations disabled in database-free mode' });
   });
 
-  // Messages routes
-  app.get('/api/conversations/:conversationId/messages', isAuthenticated, async (req: any, res) => {
-    try {
-      const { conversationId } = req.params;
-      const messages = await storage.getMessagesByConversationId(conversationId);
-      res.json(messages);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      res.status(500).json({ message: "Failed to fetch messages" });
-    }
+  app.get('/api/conversations/:conversationId/messages', (req: any, res) => {
+    console.log('📊 Messages - returning empty array (database-free mode)');
+    res.json([]);
   });
 
-  app.post('/api/conversations/:conversationId/messages', isAuthenticated, async (req: any, res) => {
-    try {
-      const { conversationId } = req.params;
-      const userId = req.user.claims.sub;
-      
-      const messageData = insertMessageSchema.parse({
-        ...req.body,
-        conversationId,
-        senderId: userId
-      });
-      
-      const message = await storage.createMessage(messageData);
-      
-      // Broadcast message via WebSocket
-      broadcastMessage(conversationId, message);
-      
-      res.json(message);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid message data", errors: error.errors });
-      }
-      console.error("Error creating message:", error);
-      res.status(500).json({ message: "Failed to create message" });
-    }
+  app.post('/api/conversations/:conversationId/messages', (req: any, res) => {
+    console.log('📊 Send message - disabled (database-free mode)');
+    res.json({ message: 'Messaging disabled in database-free mode' });
   });
 
-  // Exchanges routes
-  app.get('/api/exchanges', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const exchanges = await storage.getExchangesByUserId(userId);
-      res.json(exchanges);
-    } catch (error) {
-      console.error("Error fetching exchanges:", error);
-      res.status(500).json({ message: "Failed to fetch exchanges" });
-    }
+  app.get('/api/exchanges', (req: any, res) => {
+    console.log('📊 Exchanges - returning empty array (database-free mode)');
+    res.json([]);
   });
 
-  app.post('/api/exchanges', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const exchangeData = insertSkillExchangeSchema.parse({
-        ...req.body,
-        requesterId: userId
-      });
-      
-      const exchange = await storage.createSkillExchange(exchangeData);
-      res.json(exchange);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid exchange data", errors: error.errors });
-      }
-      console.error("Error creating exchange:", error);
-      res.status(500).json({ message: "Failed to create exchange" });
-    }
+  app.post('/api/exchanges', (req: any, res) => {
+    console.log('📊 Create exchange - disabled (database-free mode)');
+    res.json({ message: 'Exchanges disabled in database-free mode' });
   });
 
-  app.put('/api/exchanges/:id/status', isAuthenticated, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      const userId = req.user.claims.sub;
-      
-      // Verify user is part of the exchange
-      const exchanges = await storage.getExchangesByUserId(userId);
-      const exchange = exchanges.find(ex => ex.id === id);
-      
-      if (!exchange) {
-        return res.status(404).json({ message: "Exchange not found or unauthorized" });
-      }
-
-      const completedAt = status === 'completed' ? new Date() : undefined;
-      const updatedExchange = await storage.updateExchangeStatus(id, status, completedAt);
-      res.json(updatedExchange);
-    } catch (error) {
-      console.error("Error updating exchange status:", error);
-      res.status(500).json({ message: "Failed to update exchange status" });
-    }
+  app.put('/api/exchanges/:id/status', (req: any, res) => {
+    console.log('📊 Update exchange - disabled (database-free mode)');
+    res.json({ message: 'Exchange updates disabled in database-free mode' });
   });
 
-  // Ratings routes
-  app.get('/api/users/:userId/ratings', async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const ratings = await storage.getRatingsByUserId(userId);
-      res.json(ratings);
-    } catch (error) {
-      console.error("Error fetching ratings:", error);
-      res.status(500).json({ message: "Failed to fetch ratings" });
-    }
+  app.get('/api/users/:userId/ratings', (req, res) => {
+    console.log('📊 Ratings - returning empty array (database-free mode)');
+    res.json([]);
   });
 
-  app.post('/api/ratings', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const ratingData = insertUserRatingSchema.parse({
-        ...req.body,
-        raterId: userId
-      });
-      
-      const rating = await storage.createUserRating(ratingData);
-      res.json(rating);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid rating data", errors: error.errors });
-      }
-      console.error("Error creating rating:", error);
-      res.status(500).json({ message: "Failed to create rating" });
-    }
+  app.post('/api/ratings', (req: any, res) => {
+    console.log('📊 Create rating - disabled (database-free mode)');
+    res.json({ message: 'Ratings disabled in database-free mode' });
   });
 
-  // User profile routes
-  app.get('/api/users/:userId', async (req, res) => {
-    try {
-      const { userId } = req.params;
-      const user = await storage.getUserWithStats(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      res.status(500).json({ message: "Failed to fetch user profile" });
-    }
+  app.get('/api/users/:userId', (req, res) => {
+    console.log('📊 User profile - returning demo data (database-free mode)');
+    const { userId } = req.params;
+    res.json({
+      id: userId,
+      email: 'demo@skillswap.local',
+      firstName: 'Demo',
+      lastName: 'User',
+      profileImageUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo',
+      bio: 'Demo user profile (database-free mode)',
+      title: 'Member',
+      isVerified: false,
+      avgRating: 0,
+      totalExchanges: 0,
+      skillsCount: 0
+    });
   });
 
   const httpServer = createServer(app);
