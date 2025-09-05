@@ -71,12 +71,19 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     onSuccess: () => {
       // Force refresh of authentication state
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+      }, 100); // Small delay to ensure session is set
+      
       toast({
         title: "Welcome back!",
         description: "You've been signed in successfully.",
       });
-      onClose();
+      
+      // Close modal after a short delay to allow auth state to update
+      setTimeout(() => {
+        onClose();
+      }, 500);
     },
     onError: (error: any) => {
       toast({
@@ -132,12 +139,19 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       if (!isSupabaseConfigured) {
         // Generic auth logs user in immediately after signup
         queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+        setTimeout(() => {
+          queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
+        }, 100);
+        
         toast({
           title: "Welcome to SkillSwap!",
           description: "Your account has been created and you're now signed in.",
         });
-        onClose();
+        
+        // Close modal after delay to allow auth state to update
+        setTimeout(() => {
+          onClose();
+        }, 500);
         return;
       }
       

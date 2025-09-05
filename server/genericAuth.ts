@@ -12,11 +12,12 @@ export function getSession() {
   return session({
     secret: process.env.SESSION_SECRET || 'demo-session-secret-change-in-production',
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // Allow creating sessions for new users
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to false for now to ensure cookies work
       maxAge: sessionTtl,
+      sameSite: 'lax' // Allow cross-site requests
     },
   });
 }
@@ -34,13 +35,21 @@ export async function setupAuth(app: Express) {
       try {
         // For demo purposes, create user if doesn't exist
         const userId = nanoid();
-        await storage.upsertUser({
+        const emailPrefix = email?.split('@')[0] || 'Demo';
+        const firstName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1).toUpperCase();
+        
+        const userData = {
           id: userId,
           email: email,
-          firstName: email.split('@')[0],
-          lastName: 'User',
+          firstName: firstName,
+          lastName: 'USER',
           profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-        });
+          bio: `${firstName} is exploring SkillSwap`,
+          title: 'New Member',
+          isVerified: false
+        };
+        
+        await storage.upsertUser(userData);
         
         const user = { 
           id: userId, 
@@ -50,6 +59,7 @@ export async function setupAuth(app: Express) {
         
         return done(null, user);
       } catch (error) {
+        console.error('Passport strategy error:', error);
         return done(error);
       }
     }
@@ -94,44 +104,29 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // API endpoint for checking auth status
-  app.post("/api/login", async (req, res) => {
-    try {
-      // For demo, auto-create user with any credentials
-      const { email } = req.body;
-      const userId = nanoid();
+  // API endpoint for login using passport
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+      if (err) {
+        console.error('Authentication error:', err);
+        return res.status(500).json({ error: 'Authentication failed' });
+      }
       
-      const emailPrefix = email?.split('@')[0] || 'Demo';
-      const firstName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1).toUpperCase();
+      if (!user) {
+        console.error('Authentication failed - no user');
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
       
-      await storage.upsertUser({
-        id: userId,
-        email: email || `demo-${Date.now()}@skillswap.demo`,
-        firstName: firstName,
-        lastName: 'DEMO',
-        profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-        bio: `${firstName} is exploring SkillSwap to learn and teach new skills`,
-        title: 'Skill Explorer',
-        isVerified: false
-      });
-      
-      const user = { 
-        id: userId, 
-        email: email,
-        claims: { sub: userId, email: email }
-      };
-      
-      req.login(user, (err) => {
+      req.logIn(user, (err) => {
         if (err) {
-          res.status(500).json({ error: 'Login failed' });
-        } else {
-          res.json({ success: true, user: req.user });
+          console.error('Login error:', err);
+          return res.status(500).json({ error: 'Login failed' });
         }
+        
+        console.log('User logged in successfully:', user.email);
+        res.json({ success: true, user: user });
       });
-    } catch (error) {
-      console.error('API login error:', error);
-      res.status(500).json({ error: 'Login failed' });
-    }
+    })(req, res, next);
   });
 
   // Get current authenticated user

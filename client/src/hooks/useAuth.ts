@@ -6,6 +6,7 @@ import type { Session, User } from '@supabase/supabase-js';
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const queryClient = useQueryClient();
 
   // Get user profile data from our API (works with both Supabase and generic auth)
@@ -32,10 +33,15 @@ export function useAuth() {
       
       const user = await response.json();
       console.log('User authenticated:', user);
+      setAuthChecked(true);
       return user;
     },
-    retry: false,
+    retry: (failureCount, error: any) => {
+      // Only retry if we haven't checked auth yet and it's not a 401
+      return !authChecked && failureCount < 3 && error?.status !== 401;
+    },
     refetchOnWindowFocus: false,
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   useEffect(() => {
