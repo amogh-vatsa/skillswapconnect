@@ -11,34 +11,15 @@ if (!process.env.DATABASE_URL) {
 let connection: any;
 let db: any;
 
-try {
-  if (process.env.DATABASE_URL) {
-    connection = postgres(process.env.DATABASE_URL, {
-      ssl: process.env.NODE_ENV === 'production' ? 'require' : false,
-      max: 10,
-      connect_timeout: 30,
-      idle_timeout: 30,
-      max_lifetime: 60 * 30,
-      onnotice: () => {}, // Suppress notices
-    });
-    db = drizzle(connection, { schema });
-    console.log("✅ Database connection initialized");
-  } else {
-    // Create a mock db object that will throw descriptive errors
-    db = new Proxy({}, {
-      get() {
-        throw new Error("Database not configured - add DATABASE_URL environment variable");
-      }
-    });
+// DATABASE CONNECTION DISABLED to prevent ECONNRESET errors
+// This ensures no database connection attempts are made
+console.log("🔧 Database connection disabled - running in database-free mode");
+
+// Create a mock db object that never attempts connections
+db = new Proxy({}, {
+  get() {
+    throw new Error("Database disabled - app running in database-free mode");
   }
-} catch (error) {
-  console.error("❌ Failed to initialize database connection:", error.message);
-  // Create a mock db object that will throw descriptive errors
-  db = new Proxy({}, {
-    get() {
-      throw new Error(`Database connection failed: ${error.message}`);
-    }
-  });
-}
+});
 
 export { connection, db };

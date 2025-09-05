@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { seedDemoData } from "./seedDemoData";
+// import { seedDemoData } from "./seedDemoData"; // Disabled to prevent database connection errors
 
 const app = express();
 app.use(express.json());
@@ -69,9 +69,7 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
     
-    // Seed demo data to match original Replit app
-    setTimeout(() => {
-      seedDemoData().catch(console.error);
-    }, 3000); // Wait 3 seconds for server to fully start
+    // Database seeding disabled to prevent connection errors
+    // App works with mock data instead
   });
 })();

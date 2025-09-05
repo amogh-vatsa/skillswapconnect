@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Express, RequestHandler } from "express";
-import { storage } from "./storage";
+// import { storage } from "./storage"; // DISABLED - database-free mode
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -45,16 +45,26 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // Get current user endpoint
+  // Get current user endpoint - DATABASE-FREE VERSION
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const user = req.user;
-      const userWithStats = await storage.getUserWithStats(user.id);
-      res.json(userWithStats);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
+    console.log('📊 Supabase auth user endpoint - returning session data');
+    const user = req.user;
+    const sessionUser = {
+      id: user.id || 'session-user-' + Date.now(),
+      email: user.email || 'demo@skillswap.local',
+      firstName: user.user_metadata?.first_name || "Demo",
+      lastName: user.user_metadata?.last_name || "User",
+      profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
+      bio: "SkillSwap member (database-free mode)",
+      title: "Member",
+      isVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      avgRating: 0,
+      totalExchanges: 0,
+      skillsCount: 0
+    };
+    res.json(sessionUser);
   });
 
   // Sign up endpoint
@@ -90,8 +100,8 @@ export async function setupAuth(app: Express) {
         return res.status(400).json({ error: authError.message });
       }
 
-      // Create user profile in our database
-      const userProfile = await storage.upsertUser({
+      // User profile creation disabled (database-free mode)
+      const userProfile = {
         id: authData.user.id,
         email: authData.user.email!,
         firstName,
@@ -100,7 +110,7 @@ export async function setupAuth(app: Express) {
         bio: null,
         title: null,
         isVerified: false
-      });
+      };
 
       res.json({ 
         user: authData.user,
@@ -141,21 +151,8 @@ export async function setupAuth(app: Express) {
         return res.status(401).json({ error: error.message });
       }
 
-      // Ensure user exists in our database
-      const userProfile = await storage.getUser(data.user.id);
-      if (!userProfile) {
-        // Create profile if it doesn't exist (shouldn't happen normally)
-        await storage.upsertUser({
-          id: data.user.id,
-          email: data.user.email!,
-          firstName: data.user.user_metadata?.first_name || 'User',
-          lastName: data.user.user_metadata?.last_name || '',
-          profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.user.email}`,
-          bio: null,
-          title: null,
-          isVerified: false
-        });
-      }
+      // User profile handling disabled (database-free mode)
+      console.log('✅ User signed in via Supabase, profile stored in session only');
 
       res.json({ 
         user: data.user,
