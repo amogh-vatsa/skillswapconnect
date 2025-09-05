@@ -101,12 +101,18 @@ export async function setupAuth(app: Express) {
       const { email } = req.body;
       const userId = nanoid();
       
+      const emailPrefix = email?.split('@')[0] || 'Demo';
+      const firstName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1).toUpperCase();
+      
       await storage.upsertUser({
         id: userId,
         email: email || `demo-${Date.now()}@skillswap.demo`,
-        firstName: email?.split('@')[0] || 'Demo',
-        lastName: 'User',
+        firstName: firstName,
+        lastName: 'DEMO',
         profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+        bio: `${firstName} is exploring SkillSwap to learn and teach new skills`,
+        title: 'Skill Explorer',
+        isVerified: false
       });
       
       const user = { 

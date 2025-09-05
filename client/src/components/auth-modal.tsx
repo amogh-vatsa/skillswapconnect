@@ -77,6 +77,19 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       firstName: string;
       lastName: string;
     }) => {
+      if (!isSupabaseConfigured) {
+        // Use generic auth for demo
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userData.email, password: userData.password }),
+        });
+        if (!response.ok) {
+          throw new Error('Account creation failed');
+        }
+        return response.json();
+      }
+      
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

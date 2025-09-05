@@ -26,6 +26,7 @@ const categories = [
 export default function Home() {
   const { user, isLoading: userLoading } = useAuth();
   const { toast } = useToast();
+  const [demoDataSeeded, setDemoDataSeeded] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All Skills");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddSkill, setShowAddSkill] = useState(false);
@@ -34,9 +35,28 @@ export default function Home() {
   const [showChat, setShowChat] = useState(false);
   const [activeConversationUser, setActiveConversationUser] = useState<User | null>(null);
 
+  // Seed demo data to match original Replit app if no skills exist
+  useEffect(() => {
+    if (user && !demoDataSeeded) {
+      const seedDemo = async () => {
+        try {
+          const response = await fetch('/api/seed-demo', { method: 'POST' });
+          if (response.ok) {
+            console.log('Demo data seeded to match original Replit app');
+            setDemoDataSeeded(true);
+          }
+        } catch (error) {
+          console.log('Demo seeding skipped:', error);
+        }
+      };
+      seedDemo();
+    }
+  }, [user, demoDataSeeded]);
+
   const { data: skills = [], isLoading: skillsLoading } = useQuery<(Skill & { user: User })[]>({
     queryKey: ['/api/skills', selectedCategory === "All Skills" ? undefined : selectedCategory, searchQuery || undefined],
     enabled: !userLoading,
+    refetchInterval: demoDataSeeded ? false : 2000, // Refetch until demo data is loaded
   });
 
   const handleStartConversation = (skillUser: User) => {

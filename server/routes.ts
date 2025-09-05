@@ -42,6 +42,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Demo data seeding endpoint (for matching original Replit content)
+  app.post('/api/seed-demo', async (req, res) => {
+    try {
+      const { seedDemoData } = await import('./seedDemoData');
+      await seedDemoData();
+      res.json({ message: 'Demo data seeded successfully' });
+    } catch (error) {
+      console.error('Seeding error:', error);
+      res.status(500).json({ error: 'Failed to seed demo data' });
+    }
+  });
+
   // Root health check
   app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK' });
