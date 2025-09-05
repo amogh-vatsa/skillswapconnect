@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, ArrowRightLeft, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -45,6 +45,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   // Sign in mutation
   const signInMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
+      if (!isSupabaseConfigured) {
+        throw new Error('Authentication service not configured. Please contact support.');
+      }
       const { data, error } = await supabase.auth.signInWithPassword(credentials);
       if (error) throw error;
       return data;
@@ -174,11 +177,25 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <DialogTitle className="text-2xl">SkillSwap</DialogTitle>
           </div>
           <DialogDescription className="text-center">
-            Join the community of skill sharers and learners
+            {!isSupabaseConfigured ? (
+              <div className="text-orange-600 font-medium">
+                ⚠️ Authentication service is being configured. Please try again later.
+              </div>
+            ) : (
+              "Join the community of skill sharers and learners"
+            )}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {!isSupabaseConfigured && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-md">
+              <p className="text-sm text-orange-700">
+                📝 The authentication service is currently being set up. 
+                Please check back soon or contact the administrator.
+              </p>
+            </div>
+          )}
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -195,7 +212,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   placeholder="your@email.com"
                   value={signInForm.email}
                   onChange={(e) => setSignInForm({ ...signInForm, email: e.target.value })}
-                  disabled={isSignInLoading}
+                  disabled={isSignInLoading || !isSupabaseConfigured}
                   required
                 />
               </div>
@@ -208,7 +225,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     placeholder="Your password"
                     value={signInForm.password}
                     onChange={(e) => setSignInForm({ ...signInForm, password: e.target.value })}
-                    disabled={isSignInLoading}
+                    disabled={isSignInLoading || !isSupabaseConfigured}
                     required
                   />
                   <Button
@@ -217,7 +234,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    disabled={isSignInLoading}
+                    disabled={isSignInLoading || !isSupabaseConfigured}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -229,7 +246,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </div>
               <Button
                 type="submit"
-                disabled={isSignInLoading}
+                disabled={isSignInLoading || !isSupabaseConfigured}
                 className="w-full"
               >
                 {isSignInLoading ? (

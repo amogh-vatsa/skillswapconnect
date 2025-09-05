@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -31,6 +31,11 @@ export function useAuth() {
   });
 
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      setLoading(false);
+      return;
+    }
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -56,7 +61,9 @@ export function useAuth() {
   }, [queryClient]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
   };
 
   return {

@@ -5,26 +5,40 @@ import { storage } from "./storage";
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+// Check if Supabase is configured
+const isSupabaseConfigured = !!(supabaseUrl && supabaseServiceKey);
+
+if (!isSupabaseConfigured) {
+  console.warn('⚠️  Supabase not configured. Authentication endpoints will return fallback responses.');
+  console.warn('📝 To enable Supabase authentication, set these environment variables:');
+  console.warn('   - VITE_SUPABASE_URL');
+  console.warn('   - SUPABASE_SERVICE_ROLE_KEY');
 }
 
 // Create Supabase client with service role key for server-side operations
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
   }
-});
+}) : null;
 
 export async function setupAuth(app: Express) {
   // Health check for Supabase connection
   app.get('/api/auth/health', async (req, res) => {
+    if (!isSupabaseConfigured) {
+      return res.json({ 
+        status: 'Supabase not configured - using fallback auth', 
+        timestamp: new Date().toISOString(),
+        configured: false
+      });
+    }
+    
     try {
       const { data, error } = await supabase.auth.getUser();
-      res.json({ status: 'Supabase connection OK', timestamp: new Date().toISOString() });
+      res.json({ status: 'Supabase connection OK', timestamp: new Date().toISOString(), configured: true });
     } catch (error) {
-      res.status(500).json({ status: 'Supabase connection failed', error: error.message });
+      res.status(500).json({ status: 'Supabase connection failed', error: error.message, configured: true });
     }
   });
 
@@ -42,6 +56,12 @@ export async function setupAuth(app: Express) {
 
   // Sign up endpoint
   app.post('/api/auth/signup', async (req, res) => {
+    if (!isSupabaseConfigured) {
+      return res.status(503).json({ 
+        error: 'Authentication service not configured. Please set up Supabase environment variables.' 
+      });
+    }
+    
     try {
       const { email, password, firstName, lastName } = req.body;
 
@@ -92,6 +112,12 @@ export async function setupAuth(app: Express) {
 
   // Sign in endpoint
   app.post('/api/auth/signin', async (req, res) => {
+    if (!isSupabaseConfigured) {
+      return res.status(503).json({ 
+        error: 'Authentication service not configured. Please set up Supabase environment variables.' 
+      });
+    }
+    
     try {
       const { email, password } = req.body;
 
@@ -214,6 +240,14 @@ export async function setupAuth(app: Express) {
 
 // Middleware to verify JWT token from Supabase
 export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
+  if (!isSupabaseConfigured) {
+    // When Supabase is not configured, return an error for protected routes
+    return res.status(503).json({ 
+      message: "Authentication service not configured",
+      error: "Please set up Supabase environment variables to enable authentication"
+    });
+  }
+  
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -222,7 +256,7 @@ export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
     }
 
     // Verify the JWT token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await supabase!.auth.getUser(token);
     
     if (error || !user) {
       console.error('Token verification error:', error);

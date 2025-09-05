@@ -5,8 +5,26 @@ import { storage } from "./storage";
 import { insertSkillSchema, insertMessageSchema, insertSkillExchangeSchema, insertUserRatingSchema } from "@shared/schema";
 import { z } from "zod";
 
-// Import Supabase auth system
-import { setupAuth, isAuthenticated } from "./supabaseAuth";
+// Import auth systems with fallback
+import { setupAuth as setupSupabaseAuth, isAuthenticated as supabaseIsAuthenticated } from "./supabaseAuth";
+import { setupAuth as setupGenericAuth, isAuthenticated as genericIsAuthenticated } from "./genericAuth";
+
+// Check if Supabase is configured
+const isSupabaseConfigured = !!(process.env.VITE_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// Log authentication system status
+if (isSupabaseConfigured) {
+  console.log('✅ Using Supabase authentication system');
+} else {
+  console.log('⚠️  Supabase not configured - falling back to generic authentication');
+  console.log('📝 To enable Supabase authentication, set these environment variables:');
+  console.log('   - VITE_SUPABASE_URL');
+  console.log('   - SUPABASE_SERVICE_ROLE_KEY');
+}
+
+const { setupAuth, isAuthenticated } = isSupabaseConfigured 
+  ? { setupAuth: setupSupabaseAuth, isAuthenticated: supabaseIsAuthenticated }
+  : { setupAuth: setupGenericAuth, isAuthenticated: genericIsAuthenticated };
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint

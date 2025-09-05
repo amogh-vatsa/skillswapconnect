@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLeft, Users, Shield, Video } from "lucide-react";
 import AuthModal from "@/components/auth-modal";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export default function Landing() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -12,6 +13,13 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-accent/5">
+      {/* Configuration Banner */}
+      {!isSupabaseConfigured && (
+        <div className="bg-orange-500 text-white py-2 px-4 text-center text-sm">
+          🛠️ Site is being configured - Authentication will be available soon!
+        </div>
+      )}
+      
       {/* Header */}
       <header className="bg-card/80 backdrop-blur-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
