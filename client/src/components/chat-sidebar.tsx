@@ -67,22 +67,10 @@ export default function ChatSidebar({
   });
 
   // Get messages
-  const { data: messages = [] } = useQuery({
+  const { data: messages = [] } = useQuery<(Message & { sender: User })[]>({
     queryKey: ['/api/conversations', conversation?.id, 'messages'],
     enabled: !!conversation?.id,
     refetchInterval: 3000, // Poll for new messages
-    onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized", 
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-      }
-    },
   });
 
   // Send message
@@ -155,7 +143,7 @@ export default function ChatSidebar({
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10" data-testid={`avatar-chat-${user.id}`}>
             <AvatarImage 
-              src={user.profileImageUrl || undefined} 
+              src={user.profileImageUrl ?? undefined} 
               alt={`${user.firstName} ${user.lastName}`} 
             />
             <AvatarFallback>
@@ -204,7 +192,7 @@ export default function ChatSidebar({
             >
               {msg.senderId !== currentUserId && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={msg.sender.profileImageUrl || undefined} />
+                  <AvatarImage src={msg.sender.profileImageUrl ?? undefined} />
                   <AvatarFallback className="text-xs">
                     {getInitials(msg.sender.firstName, msg.sender.lastName)}
                   </AvatarFallback>
@@ -224,10 +212,10 @@ export default function ChatSidebar({
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(msg.createdAt).toLocaleTimeString([], { 
+                  {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { 
                     hour: '2-digit', 
                     minute: '2-digit' 
-                  })}
+                  }) : ''}
                 </p>
               </div>
             </div>

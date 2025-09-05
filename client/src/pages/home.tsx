@@ -34,27 +34,9 @@ export default function Home() {
   const [showChat, setShowChat] = useState(false);
   const [activeConversationUser, setActiveConversationUser] = useState<User | null>(null);
 
-  const { data: skills = [], isLoading: skillsLoading } = useQuery({
+  const { data: skills = [], isLoading: skillsLoading } = useQuery<(Skill & { user: User })[]>({
     queryKey: ['/api/skills', selectedCategory === "All Skills" ? undefined : selectedCategory, searchQuery || undefined],
     enabled: !userLoading,
-    onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to load skills",
-        variant: "destructive",
-      });
-    },
   });
 
   const handleStartConversation = (skillUser: User) => {
@@ -261,7 +243,7 @@ export default function Home() {
           </button>
           <button 
             className="flex flex-col items-center p-2 text-muted-foreground relative"
-            onClick={() => setShowChat(!showChat)}
+            onClick={() => window.location.href = "/messages"}
             data-testid="button-mobile-messages"
           >
             <div className="text-lg mb-1">💬</div>

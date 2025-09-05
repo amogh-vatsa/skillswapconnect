@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -59,34 +60,34 @@ export default function Header({
             
             {/* Desktop Navigation */}
             <nav className="hidden md:ml-10 md:flex space-x-8">
-              <a 
-                href="#" 
-                className="text-primary font-medium"
+              <Link 
+                href="/" 
+                className="text-primary font-medium hover:text-primary/80 transition-colors"
                 data-testid="nav-discover"
               >
                 Discover
-              </a>
-              <a 
-                href="#" 
+              </Link>
+              <Link 
+                href="/" 
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="nav-my-skills"
               >
                 My Skills
-              </a>
-              <a 
-                href="#" 
+              </Link>
+              <Link 
+                href="/messages" 
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="nav-messages"
               >
                 Messages
-              </a>
-              <a 
-                href="#" 
+              </Link>
+              <Link 
+                href="/" 
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="nav-exchanges"
               >
                 Exchanges
-              </a>
+              </Link>
             </nav>
           </div>
 
@@ -152,7 +153,7 @@ export default function Header({
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage 
-                        src={user.profileImageUrl || undefined} 
+                        src={user.profileImageUrl ?? undefined} 
                         alt={`${user.firstName} ${user.lastName}`} 
                       />
                       <AvatarFallback>
