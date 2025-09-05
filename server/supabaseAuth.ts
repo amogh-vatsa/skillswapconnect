@@ -5,8 +5,11 @@ import { storage } from "./storage";
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Check if Supabase is configured
-const isSupabaseConfigured = !!(supabaseUrl && supabaseServiceKey);
+// Check if Supabase is configured with real values (not placeholders)
+const isSupabaseConfigured = !!(supabaseUrl && supabaseServiceKey && 
+  supabaseUrl.includes('.supabase.co') && 
+  !supabaseUrl.includes('your-project-id') && 
+  !supabaseServiceKey.includes('your_supabase'));
 
 if (!isSupabaseConfigured) {
   console.warn('⚠️  Supabase not configured. Authentication endpoints will return fallback responses.');

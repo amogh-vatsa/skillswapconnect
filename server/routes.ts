@@ -9,8 +9,13 @@ import { z } from "zod";
 import { setupAuth as setupSupabaseAuth, isAuthenticated as supabaseIsAuthenticated } from "./supabaseAuth";
 import { setupAuth as setupGenericAuth, isAuthenticated as genericIsAuthenticated } from "./genericAuth";
 
-// Check if Supabase is configured
-const isSupabaseConfigured = !!(process.env.VITE_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+// Check if Supabase is configured with real values (not placeholders)
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const isSupabaseConfigured = !!(supabaseUrl && supabaseServiceKey && 
+  supabaseUrl.includes('.supabase.co') && 
+  !supabaseUrl.includes('your-project-id') && 
+  !supabaseServiceKey.includes('your_supabase'));
 
 // Log authentication system status
 if (isSupabaseConfigured) {
