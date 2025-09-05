@@ -69,21 +69,22 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       return data;
     },
     onSuccess: () => {
-      // Force refresh of authentication state
+      console.log('Sign in successful, refreshing auth state...');
+      
+      // Immediately invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
-      }, 100); // Small delay to ensure session is set
+      queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
       
       toast({
         title: "Welcome back!",
         description: "You've been signed in successfully.",
       });
       
-      // Close modal after a short delay to allow auth state to update
+      // Close modal and force another refetch
       setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
         onClose();
-      }, 500);
+      }, 200);
     },
     onError: (error: any) => {
       toast({

@@ -49,7 +49,12 @@ export async function setupAuth(app: Express) {
           isVerified: false
         };
         
-        await storage.upsertUser(userData);
+        // Try to save to database, but continue if it fails
+        try {
+          await storage.upsertUser(userData);
+        } catch (dbError) {
+          console.warn('Database save failed, continuing with session-only auth:', dbError.message);
+        }
         
         const user = { 
           id: userId, 
@@ -143,7 +148,29 @@ export async function setupAuth(app: Express) {
       }
       res.json(user);
     } catch (error) {
-      console.error("Error fetching user:", error);
+      console.error("Error fetching user from database:", error);
+      
+      // If database fails, return user data from session
+      if (req.user) {
+        const fallbackUser = {
+          id: req.user.id,
+          email: req.user.email,
+          firstName: req.user.email?.split('@')[0]?.toUpperCase() || 'USER',
+          lastName: 'DEMO',
+          profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${req.user.email}`,
+          bio: 'Exploring SkillSwap',
+          title: 'New Member',
+          isVerified: false,
+          avgRating: 0,
+          totalExchanges: 0,
+          skillsCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        console.log('Returning fallback user data:', fallbackUser.firstName);
+        return res.json(fallbackUser);
+      }
+      
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });

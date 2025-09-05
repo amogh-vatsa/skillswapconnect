@@ -10,19 +10,34 @@ import Messages from "@/pages/messages";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  
+  // Debug logging
+  console.log('Router state:', { isAuthenticated, isLoading, hasUser: !!user });
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+      {!isAuthenticated ? (
+        <Route path="*" component={Landing} />
       ) : (
         <>
           <Route path="/" component={Home} />
           <Route path="/messages" component={Messages} />
+          <Route path="*" component={Home} />
         </>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }
