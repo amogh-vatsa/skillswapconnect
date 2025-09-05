@@ -47,15 +47,22 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     mutationFn: async (credentials: { email: string; password: string }) => {
       if (!isSupabaseConfigured) {
         // Use generic auth for demo
+        console.log('Attempting sign in with generic auth:', credentials.email);
         const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(credentials),
+          credentials: 'include' // Important for cookies
         });
+        console.log('Sign in response status:', response.status);
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Sign in failed:', errorText);
           throw new Error('Sign in failed');
         }
-        return response.json();
+        const result = await response.json();
+        console.log('Sign in successful:', result);
+        return result;
       }
       const { data, error } = await supabase.auth.signInWithPassword(credentials);
       if (error) throw error;
@@ -90,15 +97,22 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }) => {
       if (!isSupabaseConfigured) {
         // Use generic auth for demo
+        console.log('Attempting sign up with generic auth:', userData.email);
         const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: userData.email, password: userData.password }),
+          credentials: 'include' // Important for cookies
         });
+        console.log('Sign up response status:', response.status);
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Sign up failed:', errorText);
           throw new Error('Account creation failed');
         }
-        return response.json();
+        const result = await response.json();
+        console.log('Sign up successful:', result);
+        return result;
       }
       
       const response = await fetch('/api/auth/signup', {

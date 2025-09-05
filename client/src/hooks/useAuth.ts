@@ -12,6 +12,7 @@ export function useAuth() {
   const { data: userProfile, isLoading: profileLoading } = useQuery({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
+      console.log('Checking auth status...');
       const response = await fetch('/api/auth/user', {
         credentials: 'include', // Include cookies for session-based auth
         headers: session?.access_token ? {
@@ -19,16 +20,22 @@ export function useAuth() {
         } : {}
       });
       
+      console.log('Auth check response status:', response.status);
+      
       if (!response.ok) {
         if (response.status === 401) {
+          console.log('User not authenticated');
           return null; // User not authenticated
         }
         throw new Error('Failed to fetch user profile');
       }
       
-      return response.json();
+      const user = await response.json();
+      console.log('User authenticated:', user);
+      return user;
     },
     retry: false,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
