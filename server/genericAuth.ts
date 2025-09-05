@@ -59,7 +59,18 @@ export async function setupAuth(app: Express) {
         const user = { 
           id: userId, 
           email: email,
-          claims: { sub: userId, email: email }
+          firstName: firstName,
+          lastName: 'USER',
+          claims: { 
+            sub: userId, 
+            email: email,
+            firstName: firstName,
+            lastName: 'USER',
+            profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+            bio: `${firstName} is exploring SkillSwap`,
+            title: 'New Member',
+            isVerified: false
+          }
         };
         
         return done(null, user);
@@ -73,26 +84,31 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: any, cb) => cb(null, user));
   passport.deserializeUser((user: any, cb) => cb(null, user));
 
-  // Auto-login endpoint for demo - creates a demo user automatically
-  app.get("/api/login", async (req, res) => {
+  // Auto-login endpoint for demo - creates a demo user automatically (session-only)
+  app.get("/api/login", (req, res) => {
     try {
-      // Create a demo user automatically
+      // Create a demo user automatically (session-only, no database)
       const demoEmail = `demo-${Date.now()}@skillswap.demo`;
       const userId = nanoid();
-      
-      await storage.upsertUser({
-        id: userId,
-        email: demoEmail,
-        firstName: 'Demo',
-        lastName: 'User',
-        profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${demoEmail}`,
-      });
       
       const user = { 
         id: userId, 
         email: demoEmail,
-        claims: { sub: userId, email: demoEmail }
+        firstName: 'Demo',
+        lastName: 'User',
+        claims: { 
+          sub: userId, 
+          email: demoEmail,
+          firstName: 'Demo',
+          lastName: 'User',
+          profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${demoEmail}`,
+          bio: 'Demo user exploring SkillSwap',
+          title: 'Demo Member',
+          isVerified: false
+        }
       };
+      
+      console.log('🚀 Creating demo session for:', demoEmail);
       
       // Log the user in
       req.login(user, (err) => {
@@ -100,6 +116,7 @@ export async function setupAuth(app: Express) {
           console.error('Login error:', err);
           res.redirect('/?error=login_failed');
         } else {
+          console.log('✅ Demo user logged in successfully');
           res.redirect('/');
         }
       });
@@ -134,46 +151,7 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  // Get current authenticated user
-  app.get("/api/auth/user", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUserWithStats(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user from database:", error);
-      
-      // If database fails, return user data from session
-      if (req.user) {
-        const fallbackUser = {
-          id: req.user.id,
-          email: req.user.email,
-          firstName: req.user.email?.split('@')[0]?.toUpperCase() || 'USER',
-          lastName: 'DEMO',
-          profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${req.user.email}`,
-          bio: 'Exploring SkillSwap',
-          title: 'New Member',
-          isVerified: false,
-          avgRating: 0,
-          totalExchanges: 0,
-          skillsCount: 0,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        console.log('Returning fallback user data:', fallbackUser.firstName);
-        return res.json(fallbackUser);
-      }
-      
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Note: /api/auth/user endpoint is handled in routes.ts to avoid duplication
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
