@@ -11,7 +11,7 @@ echo "📦 Installing dependencies with npm ci..."
 npm ci
 
 echo "🔍 Checking if vite is installed:"
-npx vite --version || echo "Vite not found, installing..."
+npx vite --version
 
 echo "🏗️ Building application..."
 npm run build
