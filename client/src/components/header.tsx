@@ -21,6 +21,7 @@ import {
   Plus
 } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HeaderProps {
   user?: UserType;
@@ -36,6 +37,7 @@ export default function Header({
   onShowAddSkill 
 }: HeaderProps) {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const { signOut } = useAuth();
 
   const getInitials = (firstName?: string, lastName?: string) => {
     const first = firstName?.charAt(0) || '';
@@ -43,8 +45,8 @@ export default function Header({
     return (first + last).toUpperCase() || 'U';
   };
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    await signOut();
   };
 
   return (

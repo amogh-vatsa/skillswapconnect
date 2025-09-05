@@ -5,13 +5,8 @@ import { storage } from "./storage";
 import { insertSkillSchema, insertMessageSchema, insertSkillExchangeSchema, insertUserRatingSchema } from "@shared/schema";
 import { z } from "zod";
 
-// Import both auth systems
-import * as genericAuth from "./genericAuth";
-import * as replitAuth from "./replitAuth";
-
-// Select auth system based on environment
-const isReplitEnvironment = !!process.env.REPLIT_DOMAINS;
-const { setupAuth, isAuthenticated } = isReplitEnvironment ? replitAuth : genericAuth;
+// Import Supabase auth system
+import { setupAuth, isAuthenticated } from "./supabaseAuth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint

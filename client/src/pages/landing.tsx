@@ -2,13 +2,13 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLeft, Users, Shield, Video } from "lucide-react";
-import DemoLoginModal from "@/components/demo-login-modal";
+import AuthModal from "@/components/auth-modal";
 
 export default function Landing() {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const openLoginModal = () => setIsLoginModalOpen(true);
-  const closeLoginModal = () => setIsLoginModalOpen(false);
+  const openAuthModal = () => setIsAuthModalOpen(true);
+  const closeAuthModal = () => setIsAuthModalOpen(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-accent/5">
@@ -21,7 +21,7 @@ export default function Landing() {
               <h1 className="text-xl font-bold text-card-foreground">SkillSwap</h1>
             </div>
             <Button 
-              onClick={openLoginModal}
+              onClick={openAuthModal}
               data-testid="button-login"
             >
               Get Started
@@ -44,7 +44,7 @@ export default function Landing() {
           <Button 
             size="lg" 
             className="text-lg px-8 py-3"
-            onClick={openLoginModal}
+            onClick={openAuthModal}
             data-testid="button-get-started"
           >
             Start Exchanging Skills
@@ -111,7 +111,7 @@ export default function Landing() {
           <Button 
             size="lg" 
             variant="secondary"
-            onClick={openLoginModal}
+            onClick={openAuthModal}
             data-testid="button-join-now"
           >
             Join SkillSwap Today
@@ -128,8 +128,8 @@ export default function Landing() {
         </div>
       </footer>
 
-      {/* Demo Login Modal */}
-      <DemoLoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
+      {/* Authentication Modal */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
     </div>
   );
 }

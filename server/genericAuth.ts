@@ -1,23 +1,16 @@
 import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
-import connectPg from "connect-pg-simple";
 import { Strategy as LocalStrategy } from "passport-local";
 import { storage } from "./storage";
 import { nanoid } from "nanoid";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
+  
+  // Use memory store for demo (in production, you'd use a proper session store)
   return session({
-    secret: process.env.SESSION_SECRET!,
-    store: sessionStore,
+    secret: process.env.SESSION_SECRET || 'demo-session-secret-change-in-production',
     resave: false,
     saveUninitialized: false,
     cookie: {
