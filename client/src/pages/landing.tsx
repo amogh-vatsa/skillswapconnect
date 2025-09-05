@@ -1,8 +1,15 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLeft, Users, Shield, Video } from "lucide-react";
+import DemoLoginModal from "@/components/demo-login-modal";
 
 export default function Landing() {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const openLoginModal = () => setIsLoginModalOpen(true);
+  const closeLoginModal = () => setIsLoginModalOpen(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-accent/5">
       {/* Header */}
@@ -14,7 +21,7 @@ export default function Landing() {
               <h1 className="text-xl font-bold text-card-foreground">SkillSwap</h1>
             </div>
             <Button 
-              onClick={() => window.location.href = "/api/login"}
+              onClick={openLoginModal}
               data-testid="button-login"
             >
               Get Started
@@ -37,7 +44,7 @@ export default function Landing() {
           <Button 
             size="lg" 
             className="text-lg px-8 py-3"
-            onClick={() => window.location.href = "/api/login"}
+            onClick={openLoginModal}
             data-testid="button-get-started"
           >
             Start Exchanging Skills
@@ -104,7 +111,7 @@ export default function Landing() {
           <Button 
             size="lg" 
             variant="secondary"
-            onClick={() => window.location.href = "/api/login"}
+            onClick={openLoginModal}
             data-testid="button-join-now"
           >
             Join SkillSwap Today
@@ -120,6 +127,9 @@ export default function Landing() {
           </p>
         </div>
       </footer>
+
+      {/* Demo Login Modal */}
+      <DemoLoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </div>
   );
 }

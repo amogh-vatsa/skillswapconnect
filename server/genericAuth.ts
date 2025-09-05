@@ -65,26 +65,74 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: any, cb) => cb(null, user));
   passport.deserializeUser((user: any, cb) => cb(null, user));
 
-  // Demo login endpoint - automatically creates and logs in users
-  app.post("/api/login", passport.authenticate('local'), (req, res) => {
-    res.json({ success: true, user: req.user });
+  // Auto-login endpoint for demo - creates a demo user automatically
+  app.get("/api/login", async (req, res) => {
+    try {
+      // Create a demo user automatically
+      const demoEmail = `demo-${Date.now()}@skillswap.demo`;
+      const userId = nanoid();
+      
+      await storage.upsertUser({
+        id: userId,
+        email: demoEmail,
+        firstName: 'Demo',
+        lastName: 'User',
+        profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${demoEmail}`,
+      });
+      
+      const user = { 
+        id: userId, 
+        email: demoEmail,
+        claims: { sub: userId, email: demoEmail }
+      };
+      
+      // Log the user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error('Login error:', err);
+          res.redirect('/?error=login_failed');
+        } else {
+          res.redirect('/');
+        }
+      });
+    } catch (error) {
+      console.error('Demo login error:', error);
+      res.redirect('/?error=demo_login_failed');
+    }
   });
 
-  // Simple demo login form
-  app.get("/api/login", (req, res) => {
-    res.send(`
-      <html>
-        <body>
-          <h2>SkillSwapConnect Demo Login</h2>
-          <form method="POST" action="/api/login">
-            <input name="email" type="email" placeholder="Enter any email" required style="padding: 8px; margin: 4px; display: block;"><br>
-            <input name="password" type="password" placeholder="Enter any password" required style="padding: 8px; margin: 4px; display: block;"><br>
-            <button type="submit" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px;">Login</button>
-          </form>
-          <p><small>This is a demo - any email/password will work and create a user automatically.</small></p>
-        </body>
-      </html>
-    `);
+  // API endpoint for checking auth status
+  app.post("/api/login", async (req, res) => {
+    try {
+      // For demo, auto-create user with any credentials
+      const { email } = req.body;
+      const userId = nanoid();
+      
+      await storage.upsertUser({
+        id: userId,
+        email: email || `demo-${Date.now()}@skillswap.demo`,
+        firstName: email?.split('@')[0] || 'Demo',
+        lastName: 'User',
+        profileImageUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+      });
+      
+      const user = { 
+        id: userId, 
+        email: email,
+        claims: { sub: userId, email: email }
+      };
+      
+      req.login(user, (err) => {
+        if (err) {
+          res.status(500).json({ error: 'Login failed' });
+        } else {
+          res.json({ success: true, user: req.user });
+        }
+      });
+    } catch (error) {
+      console.error('API login error:', error);
+      res.status(500).json({ error: 'Login failed' });
+    }
   });
 
   app.get("/api/logout", (req, res) => {
